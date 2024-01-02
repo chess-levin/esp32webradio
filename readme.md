@@ -1,25 +1,27 @@
 # ESP32 Webradio
 
-This project is a port of a project published by Gerald Lechner in an [article](https://www.az-delivery.de/blogs/azdelivery-blog-fur-arduino-und-raspberry-pi/internetradio-mit-esp32-und-max-98357a?comment=134821511435&page=1) at the AZ Devlivery blog.
+This project is a port of a project published by Gerald Lechner in an [article](https://www.az-delivery.de/blogs/azdelivery-blog-fur-arduino-und-raspberry-pi/internetradio-mit-esp32-und-max-98357a?comment=134821511435&page=1) at the AZ Delivery blog.
 
-I've ported the original code from an Arduino IDE compatible structure to a PlatformIO version. I have also collected information on the subject of Internet radio based on an ESP32 and documented it below.
+I've ported the original code from an Arduino IDE compatible structure to a PlatformIO version. I've also collected information (e.g. optionals displays, amplifiers, used protocols and libraries) on the subject of buildung an internet radio based on an ESP32 microcontroller - see documentation below.
 
 
 ## ESP32 Connections
 
-Pin      | Function | Application   | Arduino | Comment
---       |   --   | --              | --      | --
-| GPIO21 | SDA    | Disp I2C        | D2 |
-| GPIO22 | SCL    | Disp I2C        | D1 |
-| GPIO33 | DigIn  | Rotary 1 CLK (A)| D6 |
-| GPIO32 | DigIn  | Rotary 1 DT (B) | D5 |
-| GPIO35 | DigIn  | Rotary 1 SW     | D7 |
-| GPIO14 | DigIn  | Rotary 2 CLK (A)|    |
-| GPIO13 | DigIn  | Rotary 2 DT (B) |    |
-|        |        | Rotary 2 SW     |    | not used
-| GPIO25 | LRC    | Amp Left I2S    |    | 2. [Amp MAX98357a](https://www.az-delivery.de/products/i2s-3w-class-d-amplifier-breakout-max98357a) parallel (+5V over 470k $\Omega$)
-| GPIO26 | BCLK   | Amp Left I2S    |    |
-| GPIO27 | DIN    | Amp Left I2S    |    |
+Used GPIOs pins.
+
+Pin      | Function | Application     | Arduino | Comment
+--       |   --     | --              | --      | --
+| GPIO21 | SDA      | Disp I2C        | D2 |
+| GPIO22 | SCL      | Disp I2C        | D1 |
+| GPIO33 | DigIn    | Rotary 1 CLK (A)| D6 |
+| GPIO32 | DigIn    | Rotary 1 DT (B) | D5 |
+| GPIO35 | DigIn    | Rotary 1 SW     | D7 |  10K Pullup Resistor
+| GPIO14 | DigIn    | Rotary 2 CLK (A)|    |
+| GPIO13 | DigIn    | Rotary 2 DT (B) |    |
+|        |          | Rotary 2 SW     |    | not used
+| GPIO25 | LRC      | Amp Left I2S    |    | 2. [Amp MAX98357a](https://www.az-delivery.de/products/i2s-3w-class-d-amplifier-breakout-max98357a) parallel (+5V over 470k $\Omega$)
+| GPIO26 | BCLK     | Amp Left I2S    |    |
+| GPIO27 | DIN      | Amp Left I2S    |    |
 
 
 
@@ -35,7 +37,7 @@ Pin      | Function | Application   | Arduino | Comment
 * [Adafruit GFX Graphics Library](https://learn.adafruit.com/adafruit-gfx-graphics-library?view=all)
 
 ### Rotary Enocder
-* https://github.com/igorantolic/ai-esp32-rotary-encoder/blob/master/examples/Esp32RotaryEncoderBasics/Esp32RotaryEncoderBasics.ino
+* [ai-esp32-rotary-encoder](https://github.com/igorantolic/ai-esp32-rotary-encoder/blob/master/examples/Esp32RotaryEncoderBasics/Esp32RotaryEncoderBasics.ino)
 
 ## Protocols
 
@@ -64,7 +66,7 @@ Function | GPIO
 SDA | 21
 SCL | 22
 
-* [I2C Scanner Code](https://randomnerdtutorials.com/esp32-esp8266-i2c-lcd-arduino-ide/)
+* Use [I2C Scanner Code](https://randomnerdtutorials.com/esp32-esp8266-i2c-lcd-arduino-ide/) to test if device is detected and to get its address
 
 
 ### Inter-IC Sound (I2S)
