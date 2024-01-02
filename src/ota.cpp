@@ -1,15 +1,19 @@
 #include "Arduino.h"
+#include "globals.h"
 #include "ota.h"
 #include <ArduinoOTA.h>
 #include "display.h"
 
 uint32_t oldprc;
 
+const char* otaHostname = "webradio";
+const char* otaPassword = "radioupdate";
+
 //prepare OTA
 void setup_ota() {
   //set host name and passwort
-  ArduinoOTA.setHostname("webradio");
-  ArduinoOTA.setPassword("radioupdate");
+  ArduinoOTA.setHostname(otaHostname);
+  ArduinoOTA.setPassword(otaPassword);
   //register callback routines
   ArduinoOTA.onStart(ota_onStart);
   ArduinoOTA.onEnd(ota_onEnd);

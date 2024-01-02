@@ -29,10 +29,14 @@ uint8_t curStation = 0;   //index for current selected station in stationlist
 uint8_t curGain = 200;    //current loudness
 uint8_t actStation = 0;   //index for current station in station list used for streaming 
 uint32_t lastchange = 0;  //time of last selection change
-char title[TITLE_LEN];           //character array to hold meta data message
+char title[TITLE_LEN];    //character array to hold meta data message
 bool newTitle = false;
 uint32_t tick = 0;        //last tick-counter value to trigger timed event
 uint32_t discon = 0;      //tick-counter value to calculate disconnected time
+
+// local vars
+const char* nsPref = "radio";
+const char* nsSender = "senderlist";
 
 void setup() {
   Serial.begin(115200);
@@ -40,8 +44,9 @@ void setup() {
   //preferences will be saved in the EPROM of the ESP32 to keep the values even 
   //if power supply will be interrupted
   //Two topics "radio" and "senderliste" are defined. We will mount both
-  pref.begin("radio", false);
-  sender.begin("senderlist",false);
+  pref.begin(nsPref, false);        // false = rw-mode
+  sender.begin(nsSender, false);    // false = rw-mode
+  
   //get ssid and pkey, ntp-server and last gain and last station from preferences
   if (pref.isKey("ssid")) ssid = pref.getString("ssid");
   if (pref.isKey("pkey")) pkey = pref.getString("pkey");

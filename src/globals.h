@@ -8,9 +8,9 @@
 
 #define ELEMENTS(x) (sizeof(x) / sizeof(x[0]))
 #define TITLE_LEN 64
-#define STATIONS_MAX 50 // max number of stations in the list
+#define STATIONS_MAX 40 // max number of stations in the list
 
-//instance of prefernces
+//instance of preferences
 extern Preferences pref;
 extern Preferences sender;
 

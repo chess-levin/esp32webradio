@@ -39,6 +39,10 @@ Pin      | Function | Application     | Arduino | Comment
 ### Rotary Enocder
 * [ai-esp32-rotary-encoder](https://github.com/igorantolic/ai-esp32-rotary-encoder/blob/master/examples/Esp32RotaryEncoderBasics/Esp32RotaryEncoderBasics.ino)
 
+
+### Preferences
+* [Tutorial](https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/) 
+
 ## Protocols
 
 ### SPI
