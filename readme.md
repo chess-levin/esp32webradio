@@ -1,27 +1,50 @@
 # ESP32 Webradio
 
-This project is a port of a project published by Gerald Lechner in an [article](https://www.az-delivery.de/blogs/azdelivery-blog-fur-arduino-und-raspberry-pi/internetradio-mit-esp32-und-max-98357a?comment=134821511435&page=1) at the AZ Delivery blog.
+This project is inspired by several other internet radio projects. 
 
-I've ported the original code from an Arduino IDE compatible structure to a PlatformIO version. I've also collected information (e.g. optionals displays, amplifiers, used protocols and libraries) on the subject of buildung an internet radio based on an ESP32 microcontroller - see documentation below.
+The first idea came from a project published by Gerald Lechner in an [article](https://www.az-delivery.de/blogs/azdelivery-blog-fur-arduino-und-raspberry-pi/internetradio-mit-esp32-und-max-98357a?comment=134821511435&page=1) at the AZ Delivery blog. I've ported the original code from an Arduino IDE compatible structure to a PlatformIO version. 
+
+But this version suffers from a permanently interrupted tcp stream. So I looked for a solution to this problem and found these projects [ESP32-MiniWebRadio](https://github.com/schreibfaul1/ESP32-MiniWebRadio) and 
+[ESP32-audioI2S](https://github.com/schreibfaul1/ESP32-audioI2S/tree/master/examples/Better_WiFi_throughput). Especially the last one contained the solution on how to optimize the tcp settings to get better streaming performance with the arduino framework - thank you [Wolle](https://github.com/schreibfaul1) for your support.
+
+As I wanted to connect bluetooth speakers to my webradio I searched for similar projects that had done this before. I found ... nothing, but [pschatzmann](https://github.com/pschatzmann) and his great projects/libs [ESP32-A2DP](https://github.com/pschatzmann/ESP32-A2DP) and [arduino-audio-tools](https://github.com/pschatzmann/arduino-audio-tools). Finally I found his post "The ESP32 only supports either Bluetooth or WIFI, but not both at the same time. So if you use A2DP, you will not be able to use any functionality which depends on WIFI (e.g. FreeRTOS queues)" in his [project wiki](https://github.com/pschatzmann/ESP32-A2DP/wiki/WIFI-and-A2DP-Coexistence) - dead end.
+
+I stumbled across the [KCX_BT_EMITTER](https://www.youtube.com/watch?v=ZQ5MWcis8rA) in Ralph S Bacon's VLOG. I'm going to add it to my project. Until then I'll use this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) at the analouge output to connect my BT speakers.
+
+To remember my research results I wrote down many of the information. So below is a collection on the topics
+
+* different ESP32 models
+* using GPIO on a ESP32
+* protocols used for communication with different devices
+* information on variuos displays
+* analouge and I2C amplifiers
+* useful libraries 
 
 
-## ESP32 Connections
+## Components and Connections 
 
-Used GPIOs pins.
+Components used for this project
+
+* ESP32 DevKit V4 with WROOM32 U (and external antenna)
+* LCD blue 4x20 Zeichen, HD44780, I2C
+* PCM5102 DAC, I2S
+* Rotary Encoder KY-040
+
+### Connected GPIO pins
 
 Pin      | Function | Application     | Arduino | Comment
---       |   --     | --              | --      | --
-| GPIO21 | SDA      | Disp I2C        | D2 |
-| GPIO22 | SCL      | Disp I2C        | D1 |
-| GPIO33 | DigIn    | Rotary 1 CLK (A)| D6 |
-| GPIO32 | DigIn    | Rotary 1 DT (B) | D5 |
-| GPIO35 | DigIn    | Rotary 1 SW     | D7 |  10K Pullup Resistor
-| GPIO14 | DigIn    | Rotary 2 CLK (A)|    |
-| GPIO13 | DigIn    | Rotary 2 DT (B) |    |
-|        |          | Rotary 2 SW     |    | not used
-| GPIO25 | LRC      | Amp Left I2S    |    | 2. [Amp MAX98357a](https://www.az-delivery.de/products/i2s-3w-class-d-amplifier-breakout-max98357a) parallel (+5V over 470k $\Omega$)
-| GPIO26 | BCLK     | Amp Left I2S    |    |
-| GPIO27 | DIN      | Amp Left I2S    |    |
+| --     |   --     | --              | --      | --
+| GPIO21 | SDA      | Disp I2C        | D2      |
+| GPIO22 | SCL      | Disp I2C        | D1      |
+| GPIO32 | DigIn    | Rotary 1 CLK (A)| D6      | select Volume
+| GPIO33 | DigIn    | Rotary 1 DT (B) | D5      |
+| GPIO35 | DigIn    | Rotary 1 SW     | D7      | add 10K Pullup Resistor
+| GPIO17 | DigIn    | Rotary 2 CLK (A)|         | select Station 
+| GPIO14 | DigIn    | Rotary 2 DT (B) |         |
+| GPIO16 | DigIn    | Rotary 2 SW     |         | add 10K Pullup Resistor
+| GPIO25 | LRC      | PCM 5102 (I2S)  |         | Amplifier
+| GPIO26 | BCLK     | PCM 5102 (I2S)  |         |
+| GPIO27 | DIN      | PCM 5102 (I2S)  |         |
 
 
 
@@ -29,6 +52,8 @@ Pin      | Function | Application     | Arduino | Comment
 
 ### Audio
 
+* [ESP32-audioI2S](https://github.com/schreibfaul1/ESP32-audioI2S.git)
+* [ESP32-vs1053_ext](https://github.com/schreibfaul1/ESP32-vs1053_ext)
 * [ESP8266Audio](https://github.com/earlephilhower/ESP8266Audio)
 
 ### Display/Graphics
@@ -88,6 +113,7 @@ SCL | 22
 
 * [Pinout](https://live.staticflickr.com/4764/40089095211_ec1fee0087_b.jpg)
 * [Supplier AZ Delivery](https://www.az-delivery.de/products/esp32-dev-kit-c-v4-unverlotet)
+* ESP32 with ext. antenna [esp32-devkitc-v4-wroom32u](https://f3-innovator.de/esp32-devkitc-v4-wroom32u)
 
 ### ESP32 WROOM D1-MINI
 
@@ -142,6 +168,11 @@ Address             | I2C device found at address 0x3C
 * [Datasheet](https://www.ti.com/lit/ds/symlink/pcm5102a.pdf)
 * [Demo Project](https://www.hackster.io/esikora/esp32-audio-project-part-i-internet-radio-with-i-s-dac-a5515c)
 
+## Various Rotary Encoders
+
+* [KY-040](https://www.reichelt.de/entwicklerboards-drehwinkel-encoder-ky-040-debo-encoder-p282545.html)
+* Rotary encoder with [RGB LED Push Button](https://eckstein-shop.de/SparkfunRotaryEncoder-IlluminatedRGBEN)
+
 
 ## Other ESP-based Internet Radio Projects
 
@@ -160,4 +191,21 @@ Address             | I2C device found at address 0x3C
 ### ESP32 Internet Radio on TTGO T-Display board
 
 * OLED Display on Board, 8-Bit Audio? see [Video](https://www.youtube.com/watch?v=lThawtfSQYA&t=27s)
+
+### by Wolle
+* [ESP32-MiniWebRadio](https://github.com/schreibfaul1/ESP32-MiniWebRadio)
+
+### by Andreas Spiess
+
+* [#195 DIY Internet Radio using an ESP32 ](https://www.youtube.com/watch?v=hz65vfvbXMs)
+
+### ESP32 VS1053, TFT ILI9341 Touchdisplay by Ralph S Bacon
+
+Ralph shows how he built and improved his webradio in several VLOG videos:
+
+* [#204 TFT Touch Screen ILI9341 SPI for ESP32 (Internet Radio Research)](https://www.youtube.com/watch?v=wMJFkhmp2UE&pp=ygUTUmFscGggUyBCYWNvbiByYWRpbw%3D%3D)
+* [#205 ESP32 Internet Radio with VS1053 MP3 decoder and ILI9341 TFT](https://www.youtube.com/watch?v=xrR8EZh2bMI&pp=ygUWUmFscGggUyBCYWNvbiB3ZWJyYWRpbw%3D%3D)
+* [#206 ESP32 Circular Buffer for Internet Radio - and ESP32 WiFi Woes](https://www.youtube.com/watch?v=6BK4fzRaFGY&t=2s&pp=ygUWUmFscGggUyBCYWNvbiB3ZWJyYWRpbw%3D%3D)
+* [#208 Using an ESP32 Task for my Web Radio - using the Arduino IDE](https://www.youtube.com/watch?v=aMS4XwEr8s0&pp=ygUWUmFscGggUyBCYWNvbiB3ZWJyYWRpbw%3D%3D)
+* [#235 Bluetooth Audio🔊Transmitter (KCX_BT_EMITTER) - with AT commands](https://www.youtube.com/watch?v=ZQ5MWcis8rA&t=8s&pp=ygUTUmFscGggUyBCYWNvbiByYWRpbw%3D%3D)
 
