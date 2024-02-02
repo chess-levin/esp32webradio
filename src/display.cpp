@@ -1,9 +1,10 @@
-#include "globals.h"
 #include "display.h"
-#include "audio.h"
+#include <ArduinoLog.h>
 
 //library for LCD display
 #include <LiquidCrystal_I2C.h>
+
+#include "commons.h"
 
 //Special character to show a speaker icon for current station
 uint8_t font [8][9] {
@@ -19,9 +20,14 @@ uint8_t font [8][9] {
 
 
 //instance for LCD display
-LiquidCrystal_I2C lcd(DISPLAY_I2C_ADDR, DISPLAY_COLS, DISPLAY_ROWS); 
+LiquidCrystal_I2C lcd(DISPLAY_I2C_ADDR, DISPLAY_COLS, DISPLAY_ROWS);
+
+int scrollPtr = -1;
+int scrollMsgLen = 0;
 
 void setup_display() {
+  Log.info( F("setup_display" CR));
+
   //init the LCD display
   lcd.init();
   lcd.backlight();
@@ -57,80 +63,81 @@ String extraChar(String text){
 }
 
 //print function which not interrupts audio stream
+
 void ex_print(String output) {
   const char * o = output.c_str();
   for (uint16_t i = 0; i<strlen(o); i++) { 
     lcd.print(o[i]);
-    if (decoder && (decoder->isRunning())) decoder->loop();
   }
 
-}
-
-//show name of current station on LCD display
-//show the speaker symbol in front if current station = active station
-void showStation() {
-  clearLine(1);
-  //show speaker if current station is active
-  if (curStation == actStation) {
-    lcd.setCursor(0,1);
-    lcd.print(char(0));
-  }
-  //show station name on position 2
-  lcd.setCursor(2,1);
-  String name = String(stationlist[curStation].name);
-  ex_print(name.substring(0,18)); //limit length to 18 chars
-}
-
-//show a two line message with line wrap
-void displayMessage2(uint8_t line, String msg) {
-  //first translate german umlauts
-  msg = extraChar(msg);
-  //delete both lines
-  clearLine(line);
-  clearLine(line+1);
-  lcd.setCursor(0,line);
-  if (msg.length() < 21)
-    //message fits in one line
-    ex_print(msg);
-  else {
-    //message has more then 20 chars, so split it on space
-    uint8_t p = msg.lastIndexOf(" ",20); //if name does not fit, split line on space
-    ex_print(msg.substring(0,p));
-    lcd.setCursor(0,line+1);
-    //limit the second line to 20 chars
-    ex_print(msg.substring(p+1,p+20));
-  }
-}
-
-//show date, time and loudness in the first line
-void displayDateTime() {
-  char sttime[21];
-  clearLine(0);
-  //limit gain on 99% since we have only two digits
-  lcd.setCursor(0,0);
-  struct tm timeinfo;
-  if (getLocalTime(&timeinfo)) {
-  //get date and time as a string
-    strftime(sttime, sizeof(sttime), "%d.%b %Y %H:%M 0", &timeinfo);
-    ex_print(String(sttime));
-  } else {
-    //liefert die RTC keine Werte so wird ??.??? angezeigt
-    ex_print("??.??? ????  ??:?? ");
-  }
-  //display loudness
-  uint8_t g = curGain;
-  if (g > 99) g = 99;  
-  lcd.setCursor(18,0);
-  lcd.print(g);
-}
+} 
 
 //show a one line message
 void displayMessage(uint8_t line, String msg) {
-  clearLine(line);
+  displayClearLine(line);
   lcd.setCursor(0,line);
   //massage is limited to 20 chars
   ex_print(msg.substring(0,20));
 }
+
+
+void displayScrollingMsgStart(uint8_t line, int timeId) {
+  scrollPtr = 0;
+  displayMessage(line, scrollingStreamTitleBuffer);
+
+  strlcat(scrollingStreamTitleBuffer, "  ", MAXLEN_SCROLL_STREAMTITLE_BUFFER);
+
+  scrollMsgLen = strlen(scrollingStreamTitleBuffer);
+
+  // doubling string as buffer for scrolling
+  uint8_t end = MIN(scrollMsgLen - 2, MAXLEN_SCROLL_STREAMTITLE_BUFFER/2);
+  for (uint8_t i=0; i < end; i++) {
+    scrollingStreamTitleBuffer[scrollMsgLen + i] = scrollingStreamTitleBuffer[i];
+  }
+  scrollingStreamTitleBuffer[scrollMsgLen + end] = '\0';
+  timer.enable(timeId);
+}
+
+void displayScrollingMsgStop(uint8_t line, int timeId) {
+  scrollPtr = -1;
+  scrollMsgLen = 0;
+  displayMessage(line, scrollingStreamTitleBuffer);
+  timer.enable(timeId);
+}
+
+void displayScrollingMsgTick(uint8_t line) {
+  char buf[DISPLAY_COLS+1]; // TODO: that's shit. better construct String from pointer and len. move to global?
+
+  if (scrollPtr > scrollMsgLen) {
+    scrollPtr = 0;
+  }
+
+  strncpy(buf, scrollingStreamTitleBuffer + scrollPtr, DISPLAY_COLS);
+  buf[DISPLAY_COLS] = '\0';
+  //Serial.printf("buf '%s'  %d\n", buf, strlen(buf));
+  
+  scrollPtr++;
+  lcd.setCursor(0, line);
+  lcd.print(extraChar(buf));
+  
+  //lcd.print(doubleMsg.substring(scrollPtr, scrollPtr + DISPLAY_COLS));
+  //scrollPtr = (scrollPtr < (msg.length()+4)) ? scrollPtr+1 : 0;
+}
+
+
+void displayBar(uint8_t line, uint8_t length){
+    if (length < DISPLAY_COLS) {
+        char bar[] = "####################";
+        for (uint8_t i = length+1; i < DISPLAY_COLS; i++) {
+          bar[i] = ' ';
+        }
+
+        lcd.setCursor(0, line);
+        lcd.print(bar); // lcd.printf("%.*s", length, bar);
+        //Serial.printf("'%s'", bar);
+    }
+}
+
 
 //clear the whole display
 void displayClear() {
@@ -138,10 +145,55 @@ void displayClear() {
 }
 
 //clear one line
-void clearLine(uint8_t line) {
+void displayClearLine(uint8_t line) {
   lcd.setCursor(0,line);
   for (uint8_t i = 0; i<20; i++) {
-    if (decoder && (decoder->isRunning())) decoder->loop();
+    //if (decoder && (decoder->isRunning())) decoder->loop();
     lcd.print(" ");
   }
 }
+
+void displayShowStatus(int8_t rssi, uint8_t vol, const char* datetime) {
+  displayWifiSignal(rssi);
+  displayVolume(vol);
+  displayDateTime(datetime);
+}
+
+
+void displayWifiSignal(int8_t rssi) {
+  lcd.setCursor(0, 0);
+  lcd.printf("%.2d", rssi);
+}
+
+void displayVolume(uint8_t vol) {
+  lcd.setCursor(4, 0);
+  lcd.write((byte) 0);
+  lcd.printf("%02d", vol);
+}
+
+void displayDateTime(const char* datetime) {
+  lcd.setCursor(8, 0);
+  lcd.printf("%s", datetime);
+}
+
+void displayDateTime(const char* time, const char* date1, const char* date2) {
+  lcd.setCursor((DISPLAY_COLS / 2) - (strlen(time) / 2), 1);
+  lcd.print(time);
+  lcd.setCursor((DISPLAY_COLS / 2) - (strlen(date1) / 2), 2);
+  lcd.print(date1);
+  lcd.setCursor((DISPLAY_COLS / 2) - (strlen(date2) / 2), 3);
+  lcd.print(date2);
+}
+
+void displayTimeSecBlink(boolean on) {
+  lcd.setCursor(17, 0);
+  lcd.print((on)?":": " ");
+}
+
+
+/* https://stackoverflow.com/questions/293438/left-pad-printf-with-spaces
+void print_with_indent(int indent, char * string)
+{
+    printf("%*s%s", indent, "", string);
+}
+*/
