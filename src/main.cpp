@@ -53,7 +53,7 @@ int displayLastUpdatedMinute = -1;
 #define MAX_WIFI_CONNECT_TRIES  20
 
 #define SCROLL_MSG_SPEED_MS     900
-#define MENU_TIMEOUT_MS         1700
+#define MENU_TIMEOUT_MS         15330
 #define DISPLAY_TIME_UPDATE_MS  1000
 #define AUTOSAVE_PREFS_MS       29333
 
