@@ -14,8 +14,10 @@
 Preferences preferences;    // https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/
 Audio audio;
 
-String ssid =     "***";
-String password = "***";
+boolean writePreferencesOnSetup = false; // read values from preferences or from code
+
+String ssid =     "";
+String password = "";
 String hostname = "WEBRADIO_ESP32";
 
 int displayLastUpdatedMinute = -1;
@@ -51,7 +53,7 @@ int displayLastUpdatedMinute = -1;
 #define MAX_WIFI_CONNECT_TRIES  20
 
 #define SCROLL_MSG_SPEED_MS     900
-#define MENU_TIMEOUT_MS         9900
+#define MENU_TIMEOUT_MS         1700
 #define DISPLAY_TIME_UPDATE_MS  1000
 #define AUTOSAVE_PREFS_MS       29333
 
@@ -61,6 +63,8 @@ int displayLastUpdatedMinute = -1;
 #define PKEY_LAST_VOL       "lastVol"
 #define PKEY_LAST_FAV_IDX   "lastFav"
 #define PKEY_LAST_RUN_MODE  "lastRMo"
+#define PKEY_SSID           "ssid"
+#define PKEY_WIFI_KEY       "wifiKey"
 
 #define RUN_MODE_STANDBY    0
 #define RUN_MODE_STARTING   1
@@ -104,41 +108,8 @@ void printEspChipInfo() {
 }
 
 
-void onStatButtonClick()
-{
-    static unsigned long lastTimeStatBtnPressed = 0; // Soft debouncing
-   
-    if (millis() - lastTimeStatBtnPressed < 500)
-    {
-        return;
-    }
-
-    lastTimeStatBtnPressed = millis();
-
-    Serial.printf("STATION button pressed for %lu ms. ", millis() - lastTimeStatBtnPressed);
-
-    if (menuActive) {
-        uint8_t newFavorite = rotStation.readEncoder();
-        
-        displayClearLine(1);
-
-        if (newFavorite != currentFavorite) {
-            currentFavorite = newFavorite;
-            audio.connecttohost(favArr[currentFavorite].url);
-            timer.disable(timerScrollMsgTick);
-            displayMessage(2, favArr[currentFavorite].name);
-            displayClearLine(3);
-            prefsHaveChanged = true;
-        }
-        menuActive = false;
-        
-        timer.disable(timerMenuDispTimeout);
-    }
-
-}
-
 void onVolBtnShortClick() {
-    Serial.print("Volbutton SHORT press ");
+    Serial.print("Volume button SHORT press ");
     Serial.print(millis());
     Serial.println(" milliseconds after restart");
 
@@ -160,7 +131,7 @@ void onVolBtnShortClick() {
 }
 
 void onVolBtnLongClick() {
-    Serial.print("Volbutton LONG press ");
+    Serial.print("Volume button LONG press ");
     Serial.print(millis());
     Serial.println(" milliseconds after restart");
     
@@ -180,7 +151,49 @@ void onVolBtnLongClick() {
     }
 }
 
-void handleRotaryVolBton() {
+
+void onStatBtnShortClick() {
+    Serial.print("Station button SHORT press ");
+    Serial.print(millis());
+    Serial.println(" milliseconds after restart");
+
+    // select and connect to new radio station
+    if (runMode == RUN_MODE_RADIO) {
+
+        if (menuActive) {
+            uint8_t newFavorite = rotStation.readEncoder();
+            
+            displayClearLine(1);
+
+            if (newFavorite != currentFavorite) {
+                currentFavorite = newFavorite;
+                audio.connecttohost(favArr[currentFavorite].url);
+                timer.disable(timerScrollMsgTick);
+                displayMessage(2, favArr[currentFavorite].name);
+                displayClearLine(3);
+                prefsHaveChanged = true;
+            }
+            menuActive = false;
+            
+            timer.disable(timerMenuDispTimeout);
+        }
+
+    }
+}
+
+void onStatBtnLongClick() {
+    Serial.print("Station button LONG press ");
+    Serial.print(millis());
+    Serial.println(" milliseconds after restart");
+    
+    // Switch Radio -> Standby
+    if (runMode == RUN_MODE_RADIO) {
+       
+    }
+}
+
+
+void handleRotaryVolBtn() {
     static unsigned long lastTimeButtonDown = 0;
     static bool wasButtonDown = false;
 
@@ -209,6 +222,34 @@ void handleRotaryVolBton() {
   wasButtonDown = false;
 }
 
+void handleRotaryStatBtn() {
+    static unsigned long lastTimeButtonDown = 0;
+    static bool wasButtonDown = false;
+
+    bool isEncoderButtonDown = rotStation.isEncoderButtonDown();
+    //isEncoderButtonDown = !isEncoderButtonDown; //uncomment this line if your button is reversed
+
+    if (isEncoderButtonDown) {
+    if (!wasButtonDown) {
+        //start measuring
+        lastTimeButtonDown = millis();
+    }
+    //else we wait since button is still down
+    wasButtonDown = true;
+    return;
+  }
+
+  //button is up
+  if (wasButtonDown) {
+    //click happened, lets see if it was short click, long click or just too short
+    if (millis() - lastTimeButtonDown >= longPressAfterMiliseconds) {
+      onStatBtnLongClick();
+    } else if (millis() - lastTimeButtonDown >= shortPressAfterMiliseconds) {
+      onStatBtnShortClick();
+    }
+  }
+  wasButtonDown = false;
+}
 
 void rotaryLoop()
 {
@@ -245,12 +286,9 @@ void rotaryLoop()
             displayMessage(1, stationInfo.name);
         }
     }
-    if (rotStation.isEncoderButtonClicked())
-    {
-            onStatButtonClick();
-    }
 
-    handleRotaryVolBton();
+    handleRotaryVolBtn();
+    handleRotaryStatBtn();
 }
 
 
@@ -296,6 +334,8 @@ void savePreferencesCB() {
         preferences.putInt(PKEY_LAST_VOL, audio.getVolume());
         preferences.putInt(PKEY_LAST_FAV_IDX, currentFavorite);
         preferences.putInt(PKEY_LAST_RUN_MODE, runMode);
+        preferences.putString(PKEY_SSID, ssid);
+        preferences.putString(PKEY_WIFI_KEY, password);
         prefsHaveChanged = false;
         Serial.println("Saved preferences");
     }
@@ -402,6 +442,13 @@ void setup() {
     Log.begin(LOG_LEVEL_TRACE, &Serial, true);
     printEspChipInfo();
 
+    if (writePreferencesOnSetup) {
+        preferences.putString(PKEY_SSID, ssid);
+        preferences.putString(PKEY_WIFI_KEY, password);
+        Serial.println("Wrote defaults to prefs");
+        delay(500);
+    }
+
     timerTimeDisplayUpdate = timer.setInterval(DISPLAY_TIME_UPDATE_MS, updateTimeDisplayCB);
     timerMenuDispTimeout = timer.setInterval(MENU_TIMEOUT_MS, menuDispTimeoutCB);
     timer.disable(timerMenuDispTimeout);
@@ -409,24 +456,33 @@ void setup() {
     timer.disable(timerScrollMsgTick);
     timerSavePreferences = timer.setInterval(AUTOSAVE_PREFS_MS, savePreferencesCB);
 
-    Serial.print("Connecting to wifi ");
-    WiFi.disconnect();
-    WiFi.mode(WIFI_STA);
-    
-    WiFi.setHostname(hostname.c_str()); //TODO: no effect?
-    
-    displayMessage(0, "Connecting to wifi");
-    displayMessage(1, ssid.c_str());
+    ssid = preferences.getString(PKEY_SSID, ssid);
+    password = preferences.getString(PKEY_WIFI_KEY, password);
 
-    WiFi.begin(ssid.c_str(), password.c_str());
-    uint8_t t = 0;
-    while ((WiFi.status() != WL_CONNECTED) && (t < MAX_WIFI_CONNECT_TRIES)) {
-        t++;
-        Serial.print('.');
-        displayBar(2, t);
-        delay(1500);
+    if (ssid.isEmpty() ||ssid.isEmpty()) {
+        Serial.print("Can't connect to wifi, no credentials found.");        
+        displayMessage(0, "Cant connect to wifi");
+        displayMessage(1, "no credentials found");
+        delay(500);
+    } else {
+        Serial.print("Connecting to wifi ");
+        WiFi.disconnect();
+        WiFi.mode(WIFI_STA);
+        
+        WiFi.setHostname(hostname.c_str()); //TODO: no effect?
+        
+        displayMessage(0, "Connecting to wifi");
+        displayMessage(1, ssid.c_str());
+
+        WiFi.begin(ssid.c_str(), password.c_str());
+        uint8_t t = 0;
+        while ((WiFi.status() != WL_CONNECTED) && (t < MAX_WIFI_CONNECT_TRIES)) {
+            t++;
+            Serial.print('.');
+            displayBar(2, t);
+            delay(1500);
+        }
     }
-
     if (WiFi.status() != WL_CONNECTED) {
         runMode = RUN_MODE_RESTARTING;
         prefsHaveChanged = true;
