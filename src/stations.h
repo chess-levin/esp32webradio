@@ -14,6 +14,7 @@ struct StationInfo {
 StationInfo favArr[] = { 
   {"Radio Bremen 1", "http://icecast.radiobremen.de/rb/bremeneins/live/mp3/128/stream.mp3"},
   {"Radio Bremen 2","http://icecast.radiobremen.de/rb/bremenzwei/live/mp3/128/stream.mp3"},
+  {"Radio Bremen 4", "http://icecast.radiobremen.de/rb/bremenvier/live/mp3/128/stream.mp3"},
   {"DR P4 (Bornholm)", "http://live-icy.gss.dr.dk/A/A06L.mp3"},
   {"NDR2 (NDS)", "http://www.ndr.de/resources/metadaten/audio/m3u/ndr2.m3u"},
   {"NDR Info (HH)","http://www.ndr.de/resources/metadaten/audio/m3u/ndrinfo_hh.m3u"},
