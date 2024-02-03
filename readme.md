@@ -172,7 +172,7 @@ Address             | I2C device found at address 0x3C
 
 * [KY-040](https://www.reichelt.de/entwicklerboards-drehwinkel-encoder-ky-040-debo-encoder-p282545.html)
 * Rotary encoder with [RGB LED Push Button](https://eckstein-shop.de/SparkfunRotaryEncoder-IlluminatedRGBEN)
-
+* Debouncing Circuit [Video by Ralph S Bacon](https://www.youtube.com/watch?v=b2uUYiGrS5Y)
 
 ## Other ESP-based Internet Radio Projects
 
