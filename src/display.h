@@ -1,5 +1,4 @@
-#ifndef _display_h_
-#define _display_h_
+#pragma once
 
 #include "Arduino.h"
 #include <LiquidCrystal_I2C.h>
@@ -30,6 +29,3 @@ void displayTimeSecBlink(boolean on);
 void displayClear();
 void displayClearLine(uint8_t line);
 void displayBar(uint8_t line, uint8_t length);
-
-
-#endif

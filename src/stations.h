@@ -1,5 +1,4 @@
-#ifndef _stations_h_
-#define _stations_h_
+#pragma once
 
 struct StationInfo {
   const char* name;
@@ -40,6 +39,3 @@ StationInfo favArr[] = {
   {"TopBlues (US)", "http://us3.internet-radio.com:8342/stream"},
   {"McSlons Irish Pub Radio", "http://server9.streamserver24.com/stream/macslonsradio/stream"}
 };
-
-
-#endif
