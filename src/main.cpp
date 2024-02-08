@@ -72,10 +72,6 @@ int displayLastUpdatedMinute = -1;
 #define PKEY_SSID           "ssid"
 #define PKEY_WIFI_KEY       "wifiKey"
 
-// max 20 char long
-#define AP_SSID "webradio"
-#define AP_PWD  "12345678"
-
 
 AiEsp32RotaryEncoder rotVolume = AiEsp32RotaryEncoder(ROT_VOL_CLK_A, ROT_VOL_DT_B, ROT_VOL_SW_BTN, ROT_VOL_VCC, ROT_VOL_STEPS);
 AiEsp32RotaryEncoder rotStation = AiEsp32RotaryEncoder(ROT_STA_CLK_A, ROT_STA_DT_B, ROT_STA_SW_BTN, ROT_STA_VCC, ROT_STA_STEPS);
@@ -91,7 +87,7 @@ const char* tzBerlin = "CET-1CEST,M3.5.0,M10.5.0/3";
 const long  gmtOffset_sec = 0;
 const int   daylightOffset_sec = 3600;
 
-int timerTimeDisplayUpdate = -1;
+int timerDateTimeDisplayUpdate = -1;
 int timerMenuDispTimeout = -1;
 int timerScrollMsgTick = -1;
 int timerSavePreferences = -1;
@@ -130,7 +126,7 @@ void onVolBtnShortClick() {
         updateTimeDisplayCB();
         audio.connecttohost(favArr[currentFavorite].url);
         displayMessage(2, favArr[currentFavorite].name);
-        timer.enable(timerTimeDisplayUpdate);
+        timer.enable(timerDateTimeDisplayUpdate);
     }
 }
 
@@ -143,14 +139,14 @@ void onVolBtnLongClick() {
     if (runMode == RUN_MODE_RADIO) {
         timer.disable(timerScrollMsgTick);
         timer.disable(timerMenuDispTimeout);
-        timer.disable(timerTimeDisplayUpdate);
+        timer.disable(timerDateTimeDisplayUpdate);
         audio.stopSong();
         displayClear();
         displayLastUpdatedMinute = -1;
         runMode = RUN_MODE_STANDBY;
         updateTimeDisplayCB();
         prefsHaveChanged = true;
-        timer.enable(timerTimeDisplayUpdate);
+        timer.enable(timerDateTimeDisplayUpdate);
         Serial.printf("Switching off. runMode %d\n", runMode);
     }
 }
@@ -426,7 +422,8 @@ void setup() {
     preferences.begin("webradio", false); 
     
     Serial.begin(115200);
-    delay(5000);
+    delay(2500);
+    Serial.println("\n<<<<<<<<<<<< setup started >>>>>>>>>>>\n");
 
     int lastRunMode = preferences.getInt(PKEY_LAST_RUN_MODE, RUN_MODE_RADIO);
     Serial.printf("lastRunMode %d\n", lastRunMode);
@@ -435,6 +432,15 @@ void setup() {
 
     Log.begin(LOG_LEVEL_TRACE, &Serial, true);
     printEspChipInfo();
+
+    timerDateTimeDisplayUpdate = timer.setInterval(DISPLAY_TIME_UPDATE_MS, updateTimeDisplayCB);
+    timer.disable(timerDateTimeDisplayUpdate);
+    timerMenuDispTimeout = timer.setInterval(MENU_TIMEOUT_MS, menuDispTimeoutCB);
+    timer.disable(timerMenuDispTimeout);
+    timerScrollMsgTick = timer.setInterval(SCROLL_MSG_SPEED_MS, scrollMsgTickCB);
+    timer.disable(timerScrollMsgTick);
+    timerSavePreferences = timer.setInterval(AUTOSAVE_PREFS_MS, savePreferencesCB);
+    Serial.println("Timers are configured");
 
     if (lastRunMode == RUN_MODE_RESTART_SETUP) {
         
@@ -450,14 +456,21 @@ void setup() {
         setup_www();
         start_www();
 
-        Serial.print("AccessPoint IP address: "); Serial.println(accessPtIp);
+        Serial.printf("AccessPoint: IP '%s', KEY '%s' ", accessPtIp.toString().c_str(), AP_PWD);
         displayMessage(0, "____ Wifi setup ____");
         char msgBuf[21];
         snprintf(msgBuf, 21, "SSID: %s", AP_SSID);
         displayMessage(1, msgBuf);
-        displayMessage(2, "Open: http://");
-        displayMessage(3, accessPtIp.toString().c_str());
-    
+        displayMessage(2, AP_PWD);
+        
+        snprintf(scrollingStreamTitleBuffer, MAXLEN_SCROLL_STREAMTITLE_BUFFER / 2, "http://%s", accessPtIp.toString().c_str());
+        if (strlen(scrollingStreamTitleBuffer) > DISPLAY_COLS) {
+            displayScrollingMsgStart(3, timerScrollMsgTick);
+            timer.enable(timerScrollMsgTick);
+        } else {
+            displayMessage(3, scrollingStreamTitleBuffer);
+        }
+      
     } else {
 
         if (writePreferencesOnSetup) {
@@ -466,13 +479,6 @@ void setup() {
             Serial.println("Wrote defaults to prefs");
             delay(500);
         }
-
-        timerTimeDisplayUpdate = timer.setInterval(DISPLAY_TIME_UPDATE_MS, updateTimeDisplayCB);
-        timerMenuDispTimeout = timer.setInterval(MENU_TIMEOUT_MS, menuDispTimeoutCB);
-        timer.disable(timerMenuDispTimeout);
-        timerScrollMsgTick = timer.setInterval(SCROLL_MSG_SPEED_MS, scrollMsgTickCB);
-        timer.disable(timerScrollMsgTick);
-        timerSavePreferences = timer.setInterval(AUTOSAVE_PREFS_MS, savePreferencesCB);
 
         ssid = preferences.getString(PKEY_SSID, ssid);
         password = preferences.getString(PKEY_WIFI_KEY, password);
@@ -523,7 +529,7 @@ void setup() {
         displayClearLine(1);
         delay(500);
         
-        timer.enable(timerTimeDisplayUpdate);
+        timer.enable(timerDateTimeDisplayUpdate);
 
         audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT, -1);
         audio.setVolumeSteps(VOL_MAX_STEPS+1);
@@ -610,7 +616,7 @@ void restartInRunMode(uint8_t newRunMode) {
     preferences.putInt(PKEY_LAST_RUN_MODE, newRunMode);
     Serial.printf(">>> Restarting to newRunMode %d\n", newRunMode);
     displayClear();
-    displayMessage(1, "     restarting...");
+    displayMessage(1, "    restarting...");
     delay(500);
     ESP.restart();
 }

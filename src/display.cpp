@@ -124,6 +124,10 @@ void displayScrollingMsgTick(uint8_t line) {
   //scrollPtr = (scrollPtr < (msg.length()+4)) ? scrollPtr+1 : 0;
 }
 
+void displayBarSingle(uint8_t line, uint8_t percentage) {
+  lcd.setCursor(percentage / (100 / DISPLAY_COLS), line);
+  lcd.print("#");
+}
 
 void displayBar(uint8_t line, uint8_t length){
     if (length < DISPLAY_COLS) {
@@ -146,9 +150,8 @@ void displayClear() {
 
 //clear one line
 void displayClearLine(uint8_t line) {
-  lcd.setCursor(0,line);
-  for (uint8_t i = 0; i<20; i++) {
-    //if (decoder && (decoder->isRunning())) decoder->loop();
+  lcd.setCursor(0, line);
+  for (uint8_t i = 0; i<DISPLAY_COLS; i++) {
     lcd.print(" ");
   }
 }

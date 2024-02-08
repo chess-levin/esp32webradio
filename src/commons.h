@@ -17,6 +17,10 @@
 #define RUN_MODE_RADIO      3
 #define RUN_MODE_OTA        4
 
+// max 20 char long
+#define AP_SSID "webradio"
+#define AP_PWD  "12345678"
+
 extern SimpleTimer timer;
 extern char scrollingStreamTitleBuffer[];
 
