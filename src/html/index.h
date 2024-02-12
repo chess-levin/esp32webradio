@@ -1,0 +1,21 @@
+#pragma once
+
+const char INDEX_HTML[] PROGMEM = R"=====(
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv='content-type' content='text/html; charset=UTF-8'>
+<meta name='viewport' content='width=320' />
+</head>
+<body>
+<h1 style="text-align:center;">Internet Radio</h1>
+
+<div style="padding-top:10px;text-align:center">
+<p><button onclick="window.location.href='/wifi';">Setup Wifi Configuration</button></p>
+<p><button onclick="window.location.href='/ota';">Upload New Firmware</button></p>
+<p><button onclick="window.location.href='/restart';">Restart Radio</button></p>
+</div>
+
+</body>
+</html>
+)=====";

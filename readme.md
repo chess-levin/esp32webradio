@@ -106,7 +106,10 @@ SCL | 22
 
 ## Various ESP32 Boards
 
-[ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
+* [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
+* ESP API Guide [Partion Tables](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html)
+* [Partion Table Calculator Sheet](https://docs.google.com/spreadsheets/d/1M6_qx00ZR82jyWa2slCMcvLtnXR9Q9dnis5mR5YChW8/edit#gid=0)
+
 
 
 ### ESP32 DEV KIT C V4
@@ -210,7 +213,7 @@ Ralph shows how he built and improved his webradio in several VLOG videos:
 * [#235 Bluetooth Audio🔊Transmitter (KCX_BT_EMITTER) - with AT commands](https://www.youtube.com/watch?v=ZQ5MWcis8rA&t=8s&pp=ygUTUmFscGggUyBCYWNvbiByYWRpbw%3D%3D)
 
 
-## L + F
+## Lost + Found
 
-https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/
-
+* Changing partition table? Use [Hex Calculator](https://www.calculator.net/hex-calculator.htm) 
+* https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/

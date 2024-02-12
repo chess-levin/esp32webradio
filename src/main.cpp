@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <esp_wifi.h>
+#include <WiFiClient.h>
 #include <Preferences.h>
 #include <SPIFFS.h>
 
@@ -13,6 +15,8 @@
 #include "stations_default.h"
 #include "stations.h"
 #include "display.h"
+#include "www.h"
+
 
 Preferences preferences;    // https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/
 Audio audio;
@@ -71,12 +75,6 @@ int displayLastUpdatedMinute = -1;
 #define PKEY_SSID           "ssid"
 #define PKEY_WIFI_KEY       "wifiKey"
 
-#define RUN_MODE_STANDBY    0
-#define RUN_MODE_STARTING   1
-#define RUN_MODE_RESTARTING 2
-#define RUN_MODE_RADIO      3
-#define RUN_MODE_OTA        4
-
 
 AiEsp32RotaryEncoder rotVolume = AiEsp32RotaryEncoder(ROT_VOL_CLK_A, ROT_VOL_DT_B, ROT_VOL_SW_BTN, ROT_VOL_VCC, ROT_VOL_STEPS);
 AiEsp32RotaryEncoder rotStation = AiEsp32RotaryEncoder(ROT_STA_CLK_A, ROT_STA_DT_B, ROT_STA_SW_BTN, ROT_STA_VCC, ROT_STA_STEPS);
@@ -92,7 +90,7 @@ const char* tzBerlin = "CET-1CEST,M3.5.0,M10.5.0/3";
 const long  gmtOffset_sec = 0;
 const int   daylightOffset_sec = 3600;
 
-int timerTimeDisplayUpdate = -1;
+int timerDateTimeDisplayUpdate = -1;
 int timerMenuDispTimeout = -1;
 int timerScrollMsgTick = -1;
 int timerSavePreferences = -1;
@@ -143,7 +141,7 @@ void onVolBtnShortClick() {
         updateTimeDisplayCB();
         audio.connecttohost(getStationInfo(currentFavorite).url);
         displayMessage(2, getStationInfo(currentFavorite).name);
-        timer.enable(timerTimeDisplayUpdate);
+        timer.enable(timerDateTimeDisplayUpdate);
     }
 }
 
@@ -156,14 +154,14 @@ void onVolBtnLongClick() {
     if (runMode == RUN_MODE_RADIO) {
         timer.disable(timerScrollMsgTick);
         timer.disable(timerMenuDispTimeout);
-        timer.disable(timerTimeDisplayUpdate);
+        timer.disable(timerDateTimeDisplayUpdate);
         audio.stopSong();
         displayClear();
         displayLastUpdatedMinute = -1;
         runMode = RUN_MODE_STANDBY;
         updateTimeDisplayCB();
         prefsHaveChanged = true;
-        timer.enable(timerTimeDisplayUpdate);
+        timer.enable(timerDateTimeDisplayUpdate);
         Serial.printf("Switching off. runMode %d\n", runMode);
     }
 }
@@ -202,11 +200,8 @@ void onStatBtnLongClick() {
     Serial.print("Station button LONG press ");
     Serial.print(millis());
     Serial.println(" milliseconds after restart");
-    
-    // Switch Radio -> Standby
-    if (runMode == RUN_MODE_RADIO) {
-       
-    }
+
+    restartInRunMode(RUN_MODE_RESTART_SETUP);
 }
 
 
@@ -443,136 +438,165 @@ void setup() {
     preferences.begin("webradio", false); 
     
     Serial.begin(115200);
-    delay(5000);
+    delay(2500);
+    Serial.println("\n<<<<<<<<<<<< setup started >>>>>>>>>>>\n");
 
     int lastRunMode = preferences.getInt(PKEY_LAST_RUN_MODE, RUN_MODE_RADIO);
     Serial.printf("lastRunMode %d\n", lastRunMode);
 
     setup_display();
 
-    Serial.printf("Mounting Filessystem: %s\n", mountFS()?"Succes":"Error");
-    
-    if (loadStations(stationsFilename) > 0) {
-        Serial.printf("Loaded %d stations\n", getStationInfoSize());
-    } else {
-        displayClear();
-        stationInfo_t defStation = setStationInfoToDefault();
-        displayMessage(0,"______Warning_______");
-        displayMessage(1,"Couldn't load preset");
-        displayMessage(2,"Upload station.json");
-        displayMessage(3,"in config mode.");
-        Serial.printf("No preset stations loaded. Using one default station %s (%s)\n", defStation.name, defStation.url);
-        delay(10000);
-        displayClear();
-    }
-
-    if (lastRunMode == RUN_MODE_RESTARTING) {
-        // TODO: Goto OTA mode
-        Serial.println("Recovering from an automatic restart. Switching on.");
-        runMode = RUN_MODE_RADIO;
-        displayClear();
-    }
-
     Log.begin(LOG_LEVEL_TRACE, &Serial, true);
     printEspChipInfo();
 
-    if (writePreferencesOnSetup) {
-        preferences.putString(PKEY_SSID, ssid);
-        preferences.putString(PKEY_WIFI_KEY, password);
-        Serial.println("Wrote defaults to prefs");
-        delay(500);
-    }
-
-    timerTimeDisplayUpdate = timer.setInterval(DISPLAY_TIME_UPDATE_MS, updateTimeDisplayCB);
+    timerDateTimeDisplayUpdate = timer.setInterval(DISPLAY_TIME_UPDATE_MS, updateTimeDisplayCB);
+    timer.disable(timerDateTimeDisplayUpdate);
     timerMenuDispTimeout = timer.setInterval(MENU_TIMEOUT_MS, menuDispTimeoutCB);
     timer.disable(timerMenuDispTimeout);
     timerScrollMsgTick = timer.setInterval(SCROLL_MSG_SPEED_MS, scrollMsgTickCB);
     timer.disable(timerScrollMsgTick);
     timerSavePreferences = timer.setInterval(AUTOSAVE_PREFS_MS, savePreferencesCB);
+    Serial.println("Timers successfully configured");
 
-    ssid = preferences.getString(PKEY_SSID, ssid);
-    password = preferences.getString(PKEY_WIFI_KEY, password);
+    Serial.printf("Mounting %s Filessystem: %s\n", "SPIFFS", mountFS()?"Succes":"Error");   
 
-    if (ssid.isEmpty() ||ssid.isEmpty()) {
-        Serial.print("Can't connect to wifi, no credentials found.");        
-        displayMessage(0, "Cant connect to wifi");
-        displayMessage(1, "no credentials found");
-        delay(500);
-    } else {
-        Serial.print("Connecting to wifi ");
-        WiFi.disconnect();
-        WiFi.mode(WIFI_STA);
+    if (lastRunMode == RUN_MODE_RESTART_SETUP) {
         
-        WiFi.setHostname(hostname.c_str()); //TODO: no effect?
-        
-        displayMessage(0, "Connecting to wifi");
-        displayMessage(1, ssid.c_str());
-
-        WiFi.begin(ssid.c_str(), password.c_str());
-        uint8_t t = 0;
-        while ((WiFi.status() != WL_CONNECTED) && (t < MAX_WIFI_CONNECT_TRIES)) {
-            t++;
-            Serial.print('.');
-            displayBar(2, t);
-            delay(1500);
-        }
-    }
-    if (WiFi.status() != WL_CONNECTED) {
-        runMode = RUN_MODE_RESTARTING;
-        prefsHaveChanged = true;
-        savePreferencesCB();
-        Serial.println("Could not connect to Wifi. Check Config. Restarting in 10s");
-        displayMessage(0, "Couldn't connect to");
-        displayMessage(2, "Check Wifi Config");
-        displayMessage(3, "Restarting in 10s");
-        delay(10000);
-        ESP.restart();
-    }
-
-    Serial.println(" success");
-    Serial.printf("IP %s, Signal (RRSI): %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
-        
-    displayMessage(0, "Wifi connected");
-
-    configTzTime(tzBerlin, ntpServer, ntpServer, ntpServer);
-    Serial.printf("Time Configured: %s, %s\n", tzBerlin, ntpServer);
-    printLocalTime();
-
-    delay(2000);
-    displayClearLine(0);
-    displayClearLine(1);
-    delay(500);
-    
-    timer.enable(timerTimeDisplayUpdate);
-
-    audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT, -1);
-    audio.setVolumeSteps(VOL_MAX_STEPS+1);
-    audio.setVolume(setupRotVolume());
-    audio.setConnectionTimeout(500, 2700);
-
-    setupRotStation();
-
-    displayWifiSignal(WiFi.RSSI());
-
-    if (lastRunMode == RUN_MODE_RADIO) {
-        displayVolume(audio.getVolume());
-        audio.connecttohost(getStationInfo(currentFavorite).url);
-        displayMessage(2, getStationInfo(currentFavorite).name);
-        runMode = lastRunMode;
-    } else if (lastRunMode == RUN_MODE_STANDBY) {
+        Serial.println("Starting Wifi setup");
         displayClear();
-        runMode = lastRunMode;
-    } 
+        displayMessage(0, "Starting Wifi setup");
 
+        WiFi.disconnect();
+        WiFi.mode(WIFI_AP);
+        WiFi.softAP(AP_SSID, AP_PWD);
+        IPAddress accessPtIp = WiFi.softAPIP();
+   
+        setup_www();
+        start_www();
 
-    Serial.printf("Start in runMode = %d\n", runMode);
+        Serial.printf("AccessPoint: IP '%s', KEY '%s' ", accessPtIp.toString().c_str(), AP_PWD);
+        displayMessage(0, "____ Wifi setup ____");
+        char msgBuf[21];
+        snprintf(msgBuf, 21, "SSID: %s", AP_SSID);
+        displayMessage(1, msgBuf);
+        displayMessage(2, AP_PWD);
+        
+        snprintf(scrollingStreamTitleBuffer, MAXLEN_SCROLL_STREAMTITLE_BUFFER / 2, "http://%s", accessPtIp.toString().c_str());
+        if (strlen(scrollingStreamTitleBuffer) > DISPLAY_COLS) {
+            displayScrollingMsgStart(3, timerScrollMsgTick);
+            timer.enable(timerScrollMsgTick);
+        } else {
+            displayMessage(3, scrollingStreamTitleBuffer);
+        }
+      
+    } else {
+ 
+        if (loadStations(stationsFilename) > 0) {
+            Serial.printf("Loaded %d stations\n", getStationInfoSize());
+        } else {
+            displayClear();
+            stationInfo_t defStation = setStationInfoToDefault();
+            displayMessage(0,"______Warning_______");
+            displayMessage(1,"Couldn't load preset");
+            displayMessage(2,"Upload station.json");
+            displayMessage(3,"in config mode.");
+            Serial.printf("No preset stations loaded. Using one default station %s (%s)\n", defStation.name, defStation.url);
+            delay(10000);
+            displayClear();
+        }
+
+        if (writePreferencesOnSetup) {
+            preferences.putString(PKEY_SSID, ssid);
+            preferences.putString(PKEY_WIFI_KEY, password);
+            Serial.println("Wrote defaults to prefs");
+            delay(500);
+        }
+
+        ssid = preferences.getString(PKEY_SSID, ssid);
+        password = preferences.getString(PKEY_WIFI_KEY, password);
+
+        if (ssid.isEmpty() ||ssid.isEmpty()) {
+            Serial.print("Can't connect to wifi, no credentials found.");        
+            displayMessage(0, "Cant connect to wifi");
+            displayMessage(1, "no credentials found");
+            delay(500);
+            restartInRunMode(RUN_MODE_RESTART_SETUP);
+        } else {
+            Serial.print("Connecting to wifi ");
+            WiFi.disconnect();
+            WiFi.mode(WIFI_STA);
+            
+            WiFi.setHostname(hostname.c_str()); //TODO: no effect?
+            
+            displayMessage(0, "Connecting to wifi");
+            displayMessage(1, ssid.c_str());
+
+            WiFi.begin(ssid.c_str(), password.c_str());
+            uint8_t t = 0;
+            while ((WiFi.status() != WL_CONNECTED) && (t < MAX_WIFI_CONNECT_TRIES)) {
+                t++;
+                Serial.print('.');
+                displayBar(2, t);
+                delay(1500);
+            }
+        }
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("Could not connect to Wifi. Check Config. Restarting in 10s");
+            displayMessage(0, "Couldn't connect to");
+            displayMessage(2, "Check Wifi Config");
+            restartInRunMode(RUN_MODE_RESTART_SETUP);
+        }
+
+        Serial.println(" success");
+        Serial.printf("IP %s, Signal (RRSI): %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+            
+        displayMessage(0, "Wifi connected");
+
+        configTzTime(tzBerlin, ntpServer, ntpServer, ntpServer);
+        Serial.printf("Time Configured: %s, %s\n", tzBerlin, ntpServer);
+        printLocalTime();
+
+        delay(2000);
+        displayClearLine(0);
+        displayClearLine(1);
+        delay(500);
+        
+        timer.enable(timerDateTimeDisplayUpdate);
+
+        audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT, -1);
+        audio.setVolumeSteps(VOL_MAX_STEPS+1);
+        audio.setVolume(setupRotVolume());
+        audio.setConnectionTimeout(500, 2700);
+
+        setupRotStation();
+
+        displayWifiSignal(WiFi.RSSI());
+
+        if (lastRunMode == RUN_MODE_RADIO) {
+            displayVolume(audio.getVolume());
+            audio.connecttohost(getStationInfo(currentFavorite).url);
+            displayMessage(2, getStationInfo(currentFavorite).name);
+            runMode = lastRunMode;
+        } else if (lastRunMode == RUN_MODE_STANDBY) {
+            displayClear();
+            runMode = lastRunMode;
+        } 
+
+        Serial.printf("Start in runMode = %d\n", runMode);
+    }
     Serial.println("\n<<<<<<<<<<<< setup finished >>>>>>>>>>>\n");
 }
 
 void loop(){
-    audio.loop();
+    if (runMode == RUN_MODE_STANDBY) {
+    }
+    if (runMode == RUN_MODE_RADIO) {
+        audio.loop();
+    }
+
     rotaryLoop();
     timer.run();
+
 }
 
 // optional callbacks from audio lib
@@ -617,4 +641,19 @@ void audio_lasthost(const char *info){  //stream URL played
 }
 void audio_eof_speech(const char *info){
     Serial.print("eof_speech  ");Serial.println(info);
+}
+
+void restartInRunMode(uint8_t newRunMode) {
+    preferences.putInt(PKEY_LAST_RUN_MODE, newRunMode);
+    Serial.printf(">>> Restarting to newRunMode %d\n", newRunMode);
+    displayClear();
+    displayMessage(1, "    restarting...");
+    delay(500);
+    ESP.restart();
+}
+
+void setWifiConfig(const String newSsid, const String newPkey) {
+    preferences.putString(PKEY_SSID, newSsid);
+    preferences.putString(PKEY_WIFI_KEY, newPkey);
+    Serial.println("Saved new Wifi config");
 }

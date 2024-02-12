@@ -1,0 +1,22 @@
+#pragma once
+
+const char RESTART_HTML[] PROGMEM = R"=====(
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv='content-type' content='text/html; charset=UTF-8'>
+<meta name='viewport' content='width=320' />
+
+</head>
+<body>
+<h1 style="text-align:center;">Internet Radio</h1>
+<div>
+<h2 style="text-align:center;">Succesfully saved config</h2>
+
+<div style="padding-top:10px;text-align:center">
+<button onclick="window.location.href='/restart';">Restart</button>
+</div>
+</div>
+</body>
+</html>
+)=====";

@@ -8,8 +8,16 @@
     "url": "http://icecast.radiobremen.de/rb/bremenzwei/live/mp3/128/stream.mp3"
   },
   {
+    "name": "RB 2 (64kb,mp3)",
+    "url": "http://icecast.radiobremen.de/rb/bremenzwei/live/mp3/64/stream.mp3"
+  },
+  {
     "name": "Radio Bremen 4",
     "url": "http://icecast.radiobremen.de/rb/bremenvier/live/mp3/128/stream.mp3"
+  },
+  {
+    "name": "RB 4 (64kb,mp3)",
+    "url": "http://icecast.radiobremen.de/rb/bremenvier/live/mp3/64/stream.mp3"
   },
   {
     "name": "DR P4 (Bornholm)",
