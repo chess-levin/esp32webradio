@@ -209,3 +209,8 @@ Ralph shows how he built and improved his webradio in several VLOG videos:
 * [#208 Using an ESP32 Task for my Web Radio - using the Arduino IDE](https://www.youtube.com/watch?v=aMS4XwEr8s0&pp=ygUWUmFscGggUyBCYWNvbiB3ZWJyYWRpbw%3D%3D)
 * [#235 Bluetooth Audio🔊Transmitter (KCX_BT_EMITTER) - with AT commands](https://www.youtube.com/watch?v=ZQ5MWcis8rA&t=8s&pp=ygUTUmFscGggUyBCYWNvbiByYWRpbw%3D%3D)
 
+
+## L + F
+
+https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/
+

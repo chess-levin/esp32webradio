@@ -1,13 +1,16 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <Preferences.h>
+#include <SPIFFS.h>
 
+#include "ArduinoJson.h"
 #include "Audio.h"
 #include "AiEsp32RotaryEncoder.h"
 
 #include "ArduinoLog.h"
 
 #include "commons.h"
+#include "stations_default.h"
 #include "stations.h"
 #include "display.h"
 
@@ -19,6 +22,8 @@ boolean writePreferencesOnSetup = false; // read values from preferences or from
 String ssid =     "";
 String password = "";
 String hostname = "WEBRADIO_ESP32";
+
+const char *stationsFilename = "/stations.json";
 
 int displayLastUpdatedMinute = -1;
 
@@ -100,6 +105,18 @@ boolean prefsHaveChanged = false;
 
 uint8_t runMode = RUN_MODE_RADIO;
 
+
+bool mountFS() {
+  if(SPIFFS.begin()) {
+    Serial.println("SPIFFS mounted.");
+    return true;
+  } else {
+    Serial.println("Error while mounting SPIFFS");
+    return false;
+  }
+}
+
+
 void updateTimeDisplayCB();
 
 void printEspChipInfo() {
@@ -124,8 +141,8 @@ void onVolBtnShortClick() {
         displayVolume(audio.getVolume());
         displayLastUpdatedMinute = -1;
         updateTimeDisplayCB();
-        audio.connecttohost(favArr[currentFavorite].url);
-        displayMessage(2, favArr[currentFavorite].name);
+        audio.connecttohost(getStationInfo(currentFavorite).url);
+        displayMessage(2, getStationInfo(currentFavorite).name);
         timer.enable(timerTimeDisplayUpdate);
     }
 }
@@ -167,9 +184,9 @@ void onStatBtnShortClick() {
 
             if (newFavorite != currentFavorite) {
                 currentFavorite = newFavorite;
-                audio.connecttohost(favArr[currentFavorite].url);
+                audio.connecttohost(getStationInfo(currentFavorite).url);
                 timer.disable(timerScrollMsgTick);
-                displayMessage(2, favArr[currentFavorite].name);
+                displayMessage(2, getStationInfo(currentFavorite).name);
                 displayClearLine(3);
                 prefsHaveChanged = true;
             }
@@ -281,7 +298,7 @@ void rotaryLoop()
             Serial.print("STATION Value: ");
             Serial.print(selectedFavorite);
             Serial.print(", ");
-            StationInfo stationInfo = favArr[selectedFavorite];
+            stationInfo_t stationInfo = getStationInfo(selectedFavorite);
             Serial.println(stationInfo.name);        
             displayMessage(1, stationInfo.name);
         }
@@ -289,6 +306,16 @@ void rotaryLoop()
 
     handleRotaryVolBtn();
     handleRotaryStatBtn();
+}
+
+
+void printLocalTime(){
+    if(!getLocalTime(&timeinfo)){
+        Serial.println("Failed to obtain time");
+        return;
+    }
+
+    Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 }
 
 
@@ -304,15 +331,6 @@ void IRAM_ATTR readStaEncoderISR()
     rotStation.readEncoder_ISR();
 }
 
-
-void printLocalTime(){
-    if(!getLocalTime(&timeinfo)){
-        Serial.println("Failed to obtain time");
-        return;
-    }
-
-    Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
-}
 
 /* Callbacks */
 
@@ -398,25 +416,25 @@ int setupRotVolume() {
 int setupRotStation() {
     rotStation.begin();
     rotStation.setup(readStaEncoderISR);
-    rotStation.setBoundaries(0, ARRAY_LEN(favArr) - 1, NO_CIRCLE_VALUES); //minValue, maxValue, circleValues true|false (when max go to min and vice versa)
+    rotStation.setBoundaries(0, getStationInfoSize() - 1, NO_CIRCLE_VALUES); //minValue, maxValue, circleValues true|false (when max go to min and vice versa)
     rotStation.setEncoderValue(0);
     //rotStation.setAcceleration(0); //or set the value - larger number = more accelearation; 0 or 1 means disabled acceleration
     rotStation.disableAcceleration();
     
-    Serial.print("Favoritelist contains elements: "); Serial.println(ARRAY_LEN(favArr));
+    Serial.print("Favoritelist contains elements: "); Serial.println(getStationInfoSize());
 
     currentFavorite = preferences.getInt(PKEY_LAST_FAV_IDX, currentFavorite);
 
     // input sanitation
-    if ((currentFavorite > ARRAY_LEN(favArr) - 1) || (currentFavorite < 0)) {
+    if ((currentFavorite > getStationInfoSize()-1) || (currentFavorite < 0)) {
         Serial.println("Favindex from prefs is out of range for current favorite list");
     }
-    currentFavorite = MIN(currentFavorite, ARRAY_LEN(favArr) - 1);
+    currentFavorite = MIN(currentFavorite, getStationInfoSize() - 1);
     currentFavorite = MAX(0, currentFavorite);
 
     rotStation.setEncoderValue(currentFavorite);
 
-    Serial.print("currentFavorite = "); Serial.print(currentFavorite); Serial.print(" "); Serial.println(favArr[currentFavorite].name);
+    Serial.printf("currentFavorite = %d %s\n", currentFavorite, getStationInfo(currentFavorite).name);
     return currentFavorite;
 }
 
@@ -431,6 +449,22 @@ void setup() {
     Serial.printf("lastRunMode %d\n", lastRunMode);
 
     setup_display();
+
+    Serial.printf("Mounting Filessystem: %s\n", mountFS()?"Succes":"Error");
+    
+    if (loadStations(stationsFilename) > 0) {
+        Serial.printf("Loaded %d stations\n", getStationInfoSize());
+    } else {
+        displayClear();
+        stationInfo_t defStation = setStationInfoToDefault();
+        displayMessage(0,"______Warning_______");
+        displayMessage(1,"Couldn't load preset");
+        displayMessage(2,"Upload station.json");
+        displayMessage(3,"in config mode.");
+        Serial.printf("No preset stations loaded. Using one default station %s (%s)\n", defStation.name, defStation.url);
+        delay(10000);
+        displayClear();
+    }
 
     if (lastRunMode == RUN_MODE_RESTARTING) {
         // TODO: Goto OTA mode
@@ -522,14 +556,15 @@ void setup() {
 
     if (lastRunMode == RUN_MODE_RADIO) {
         displayVolume(audio.getVolume());
-        audio.connecttohost(favArr[currentFavorite].url);
-        displayMessage(2, favArr[currentFavorite].name);
+        audio.connecttohost(getStationInfo(currentFavorite).url);
+        displayMessage(2, getStationInfo(currentFavorite).name);
         runMode = lastRunMode;
     } else if (lastRunMode == RUN_MODE_STANDBY) {
         displayClear();
         runMode = lastRunMode;
     } 
-    
+
+
     Serial.printf("Start in runMode = %d\n", runMode);
     Serial.println("\n<<<<<<<<<<<< setup finished >>>>>>>>>>>\n");
 }
@@ -540,7 +575,8 @@ void loop(){
     timer.run();
 }
 
-// optional
+// optional callbacks from audio lib
+// TODO: show important error info in display
 void audio_info(const char *info){
     Serial.print("info        "); Serial.println(info);
 }
