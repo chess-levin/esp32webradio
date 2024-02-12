@@ -18,6 +18,8 @@
 #define CTYPE_HTML  "text/html"
 #define CTYPE_PLAIN "text/plain"
 
+#define U_PART U_SPIFFS
+
 AsyncWebServer server(80);
 size_t contentLen;
 
@@ -64,8 +66,8 @@ void setup_www() {
                 Serial.printf("filename: %s\n", filename.c_str());
                 Serial.printf("content length: %d\n", contentLen);
                 // if filename includes spiffs, update the spiffs partition
-                //int cmd = (filename.indexOf("spiffs") > -1) ? U_PART : U_FLASH;
-                if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+                int cmd = (filename.indexOf("spiffs") > -1) ? U_PART : U_FLASH;
+                if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd)) {
                     Update.printError(Serial);
                 }
             }
