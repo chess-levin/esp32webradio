@@ -1,0 +1,126 @@
+[
+  {
+    "name": "Radio Bremen 1",
+    "url": "http://icecast.radiobremen.de/rb/bremeneins/live/mp3/128/stream.mp3"
+  },
+  {
+    "name": "Radio Bremen 2",
+    "url": "http://icecast.radiobremen.de/rb/bremenzwei/live/mp3/128/stream.mp3"
+  },
+  {
+    "name": "RB 2 (64kb,mp3)",
+    "url": "http://icecast.radiobremen.de/rb/bremenzwei/live/mp3/64/stream.mp3"
+  },
+  {
+    "name": "Radio Bremen 4",
+    "url": "http://icecast.radiobremen.de/rb/bremenvier/live/mp3/128/stream.mp3"
+  },
+  {
+    "name": "RB 4 (64kb,mp3)",
+    "url": "http://icecast.radiobremen.de/rb/bremenvier/live/mp3/64/stream.mp3"
+  },
+  {
+    "name": "DR P4 (Bornholm)",
+    "url": "http://live-icy.gss.dr.dk/A/A06L.mp3"
+  },
+  {
+    "name": "NDR2 (NDS)",
+    "url": "http://www.ndr.de/resources/metadaten/audio/m3u/ndr2.m3u"
+  },
+  {
+    "name": "NDR Info (HH)",
+    "url": "http://www.ndr.de/resources/metadaten/audio/m3u/ndrinfo_hh.m3u"
+  },
+  {
+    "name": "WDR2 (OWL)",
+    "url": "http://wdr-wdr2-ostwestfalenlippe.icecastssl.wdr.de/wdr/wdr2/ostwestfalenlippe/mp3/128/stream.mp3"
+  },
+  {
+    "name": "WDR5",
+    "url": "https://wdr-wdr5-live.icecastssl.wdr.de/wdr/wdr5/live/mp3/128/stream.mp3"
+  },
+  {
+    "name": "Einslive",
+    "url": "http://www.wdr.de/wdrlive/media/einslive.m3u"
+  },
+  {
+    "name": "DLF",
+    "url": "http://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3"
+  },
+  {
+    "name": "DLF Kultur",
+    "url": "http://st02.sslstream.dlf.de/dlf/02/128/mp3/stream.mp3"
+  },
+  {
+    "name": "DLF Nova (128kb,mp3)",
+    "url": "http://st03.sslstream.dlf.de/dlf/03/128/mp3/stream.mp3"
+  },
+  {
+    "name": "DLF Nova (96kb,aac)",
+    "url": "https://st03.sslstream.dlf.de/dlf/03/mid/aac/stream.aac?aggregator=web"
+  },
+  {
+    "name": "DLF Nova (48kb,aac)",
+    "url": "https://st03.sslstream.dlf.de/dlf/03/low/aac/stream.aac?aggregator=web"
+  },
+    {
+    "name": "DLF DokDeb",
+    "url": "https://st04.sslstream.dlf.de/dlf/04/128/mp3/stream.mp3"
+  },
+  {
+    "name": "ffn",
+    "url": "http://player.ffn.de/radioffn.mp3"
+  },
+  {
+    "name": "8080s",
+    "url": "http://regiocast.streamabc.net/regc-80s80smweb2517500-mp3-192-1672667"
+  },
+  {
+    "name": "KCWR",
+    "url": "http://kcrw.streamguys1.com/kcrw_192k_mp3_on_air"
+  },
+  {
+    "name": "FluxFM Hamburg",
+    "url": "http://streams.fluxfm.de/flux-hamburg/mp3-320/audio/"
+  },
+  {
+    "name": "FluxFM Alternative",
+    "url": "http://streams.fluxfm.de/alternative/mp3-320/streams.fluxfm.de/"
+  },
+  {
+    "name": "FluxFM 80er",
+    "url": "http://streams.fluxfm.de/80er/mp3-320/streams.fluxfm.de/"
+  },
+  {
+    "name": "FluxFM 70er",
+    "url": "http://streams.fluxfm.de/70er/mp3-320/streams.fluxfm.de/"
+  },
+  {
+    "name": "FluxFM 60er",
+    "url": "http://streams.fluxfm.de/60er/mp3-320/streams.fluxfm.de/"
+  },
+  {
+    "name": "NRW Schlagerradio",
+    "url": "http://rnrw.cast.addradio.de/rnrw-0182/deinschlager/low/stream.mp3"
+  },
+  {
+    "name": "NRW Rockradio",
+    "url": "http://rnrw.cast.addradio.de/rnrw-0182/deinrock/low/stream.mp3"
+  },
+  {
+    "name": "NRW 90er",
+    "url": "http://rnrw.cast.addradio.de/rnrw-0182/dein90er/low/stream.mp3"
+  },
+  {
+    "name": "Cork 96fm",
+    "url": "https://wg.cdn.tibus.net/96fm"
+  },
+  {
+    "name": "TopBlues (US)",
+    "url": "http://us3.internet-radio.com:8342/stream"
+  },
+  {
+    "name": "McSlons Irish Pub Radio",
+    "url": "http://server9.streamserver24.com/stream/macslonsradio/stream"
+  }
+]
