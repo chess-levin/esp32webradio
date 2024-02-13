@@ -21,38 +21,37 @@ uint8_t getStationInfoSize() {
 
 stationInfo_t getStationInfo(uint8_t i) {
   if (i >= getStationInfoSize()) 
-    Serial.printf("ERROR: index %d out of bounds in getStationInfo()", i);
+    log_e("index %d out of bounds in getStationInfo()", i);
 
   return stationInfo[i];
 }
 
 int loadStations(const char *filename) {
-  Serial.printf("Reading stations from: %s\n", filename); 
+  log_d("Reading stations from: %s", filename); 
   
   File file = SPIFFS.open(filename);
 
   if(!file) {
-    Serial.printf("ERROR: Failed to open: %s\n", filename);
+    log_e("Failed to open: %s", filename);
     return countElements;
   } 
 
-  Serial.printf("Successfully opened: %s (%d bytes)\n", filename, file.size());
+  log_d("Successfully opened: %s (%d bytes)", filename, file.size());
   
   JsonDocument doc;
 
   DeserializationError error = deserializeJson(doc, file);
 
   if (error) {
-    Serial.print(F("deserializeJson() failed: "));
-    Serial.println(error.f_str());
+    log_e("deserializeJson() failed: %s", error.c_str());
     return countElements;
   }
 
   JsonArray arr = doc.as<JsonArray>();
   countElements = arr.size();
-  Serial.printf("Successfully deserialized %d elements\n", countElements);
+  log_d("Successfully deserialized %d elements", countElements);
   if (countElements > MAX_COUNT_STATIONS) {
-    Serial.printf("Number of elements exceeds maximum %d\n", MAX_COUNT_STATIONS);
+    log_w("Number of elements exceeds maximum %d", MAX_COUNT_STATIONS);
   }
 
   stationInfo = new stationInfo_t[countElements];
@@ -63,12 +62,12 @@ int loadStations(const char *filename) {
     stationInfo[i].name = strndup(data, 20);
 
     if (strlen(data) > MAXLEN_STATION_NAME) {
-      Serial.printf("WARN: shortened station.name '%s' to %d chars\n", data, MAXLEN_STATION_NAME);
+      log_w("shortened station.name '%s' to %d chars", data, MAXLEN_STATION_NAME);
     }
 
     if (stationInfo[i].name == NULL) {
       countElements = i;
-      Serial.printf("ERROR: could not copy station.name '%s'\n", data);
+      log_e("could not copy station.name '%s'", data);
       return countElements;
     }
 
@@ -76,16 +75,16 @@ int loadStations(const char *filename) {
     stationInfo[i].url = strndup(data, 128);
 
     if (strlen(data) > MAXLEN_STATION_URL) {
-      Serial.printf("WARN: shortened station.url '%s' to %d chars\n", data, MAXLEN_STATION_URL);
+      log_w("shortened station.url '%s' to %d chars", data, MAXLEN_STATION_URL);
     }
 
     if (stationInfo[i].url == NULL) {
       countElements = i;
-      Serial.printf("ERROR: could not copy station.url '%s'\n", data);
+      log_e("could not copy station.url '%s'", data);
       return countElements;
     }
 
-    Serial.printf("%d\t %s\t %s\n", i, stationInfo[i].name, stationInfo[i].url);
+    log_v("%d\t %s\t %s", i, stationInfo[i].name, stationInfo[i].url);
     i++;
   }
 

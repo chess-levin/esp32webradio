@@ -1,5 +1,5 @@
 #include "display.h"
-#include <ArduinoLog.h>
+
 
 //library for LCD display
 #include <LiquidCrystal_I2C.h>
@@ -26,8 +26,6 @@ int scrollPtr = -1;
 int scrollMsgLen = 0;
 
 void setup_display() {
-  Log.info( F("setup_display" CR));
-
   //init the LCD display
   lcd.init();
   lcd.backlight();
@@ -114,7 +112,7 @@ void displayScrollingMsgTick(uint8_t line) {
 
   strncpy(buf, scrollingStreamTitleBuffer + scrollPtr, DISPLAY_COLS);
   buf[DISPLAY_COLS] = '\0';
-  //Serial.printf("buf '%s'  %d\n", buf, strlen(buf));
+  //log_d("buf '%s'  %d\n", buf, strlen(buf));
   
   scrollPtr++;
   lcd.setCursor(0, line);
@@ -138,23 +136,22 @@ void displayBar(uint8_t line, uint8_t length){
 
         lcd.setCursor(0, line);
         lcd.print(bar); // lcd.printf("%.*s", length, bar);
-        //Serial.printf("'%s'", bar);
     }
 }
 
 
-//clear the whole display
 void displayClear() {
   lcd.clear();
 }
 
-//clear one line
+
 void displayClearLine(uint8_t line) {
   lcd.setCursor(0, line);
   for (uint8_t i = 0; i<DISPLAY_COLS; i++) {
     lcd.print(" ");
   }
 }
+
 
 void displayShowStatus(int8_t rssi, uint8_t vol, const char* datetime) {
   displayWifiSignal(rssi);

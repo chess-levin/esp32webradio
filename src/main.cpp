@@ -9,8 +9,6 @@
 #include "Audio.h"
 #include "AiEsp32RotaryEncoder.h"
 
-#include "ArduinoLog.h"
-
 #include "commons.h"
 #include "stations_default.h"
 #include "stations.h"
@@ -100,16 +98,16 @@ unsigned long longPressAfterMiliseconds = LONG_BTN_PUSH_MS;     //how long a lon
 
 boolean menuActive = false;
 boolean prefsHaveChanged = false;
+boolean fsMounted = false;
 
 uint8_t runMode = RUN_MODE_RADIO;
 
 
 bool mountFS() {
   if(SPIFFS.begin()) {
-    Serial.println("SPIFFS mounted.");
     return true;
   } else {
-    Serial.println("Error while mounting SPIFFS");
+    log_e("Error while mounting SPIFFS");
     return false;
   }
 }
@@ -118,20 +116,18 @@ bool mountFS() {
 void updateTimeDisplayCB();
 
 void printEspChipInfo() {
-  Log.infoln("Chip model %s (rev %d), #cores %d, CPU Freq %d MHz", ESP.getChipModel(), ESP.getChipRevision(), ESP.getChipCores(), ESP.getCpuFreqMHz());
-  Log.infoln("FlashChipSize %d KB, FlashChipSpeed %d", ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed());
+  log_i("Chip model %s (rev %d), #cores %d, CPU Freq %d MHz", ESP.getChipModel(), ESP.getChipRevision(), ESP.getChipCores(), ESP.getCpuFreqMHz());
+  log_i("FlashChipSize %d KB, FlashChipSpeed %d", ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed());
 }
 
 
 void onVolBtnShortClick() {
-    Serial.print("Volume button SHORT press ");
-    Serial.print(millis());
-    Serial.println(" milliseconds after restart");
+    log_d("Volume button SHORT press %ul milliseconds after restart", millis());
 
     // Switch Standby -> Radio
     if (runMode == RUN_MODE_STANDBY) {
         runMode = RUN_MODE_RADIO;
-        Serial.printf("Switching on. runMode %d\n", runMode);
+        log_v("Switching on. runMode %d", runMode);
         prefsHaveChanged = true;
         displayClearLine(1);        // TODO: clear()?
         displayClearLine(2);
@@ -146,9 +142,7 @@ void onVolBtnShortClick() {
 }
 
 void onVolBtnLongClick() {
-    Serial.print("Volume button LONG press ");
-    Serial.print(millis());
-    Serial.println(" milliseconds after restart");
+    log_d("Volume button LONG press %ul milliseconds after restart", millis());
     
     // Switch Radio -> Standby
     if (runMode == RUN_MODE_RADIO) {
@@ -162,15 +156,13 @@ void onVolBtnLongClick() {
         updateTimeDisplayCB();
         prefsHaveChanged = true;
         timer.enable(timerDateTimeDisplayUpdate);
-        Serial.printf("Switching off. runMode %d\n", runMode);
+        log_v("Switching off. runMode %d", runMode);
     }
 }
 
 
 void onStatBtnShortClick() {
-    Serial.print("Station button SHORT press ");
-    Serial.print(millis());
-    Serial.println(" milliseconds after restart");
+    log_d("Station button SHORT press %ul milliseconds after restart", millis());
 
     // select and connect to new radio station
     if (runMode == RUN_MODE_RADIO) {
@@ -197,9 +189,7 @@ void onStatBtnShortClick() {
 }
 
 void onStatBtnLongClick() {
-    Serial.print("Station button LONG press ");
-    Serial.print(millis());
-    Serial.println(" milliseconds after restart");
+    log_d("Station button LONG press %ul milliseconds after restart", millis());
 
     restartInRunMode(RUN_MODE_RESTART_SETUP);
 }
@@ -269,7 +259,6 @@ void rotaryLoop()
     {
         if (runMode == RUN_MODE_RADIO) {
             uint8_t newVol = MIN(rotVolume.readEncoder(), VOL_MAX_STEPS);
-            //Serial.print("VOLUME Encoder Value: "); Serial.println(newVol);
 
             newVol = MIN(newVol, VOL_MAX_STEPS);
             newVol = MAX(0, newVol);
@@ -290,11 +279,8 @@ void rotaryLoop()
             }
 
             long selectedFavorite = rotStation.readEncoder();
-            Serial.print("STATION Value: ");
-            Serial.print(selectedFavorite);
-            Serial.print(", ");
             stationInfo_t stationInfo = getStationInfo(selectedFavorite);
-            Serial.println(stationInfo.name);        
+            log_d("STATION Value: %ld, %s", selectedFavorite, stationInfo.name);
             displayMessage(1, stationInfo.name);
         }
     }
@@ -306,7 +292,7 @@ void rotaryLoop()
 
 void printLocalTime(){
     if(!getLocalTime(&timeinfo)){
-        Serial.println("Failed to obtain time");
+        log_e("Failed to obtain time");
         return;
     }
 
@@ -330,12 +316,11 @@ void IRAM_ATTR readStaEncoderISR()
 /* Callbacks */
 
 void scrollMsgTickCB(){
-    //Log.infoln("scrollMsgTickCB");    
     displayScrollingMsgTick(3);
 }
 
 void menuDispTimeoutCB() {
-    Log.infoln("menuDispTimeoutCB");
+    log_v("menuDispTimeoutCB");
     displayClearLine(1);
     rotStation.setEncoderValue(currentFavorite);
     menuActive = false;
@@ -350,13 +335,13 @@ void savePreferencesCB() {
         preferences.putString(PKEY_SSID, ssid);
         preferences.putString(PKEY_WIFI_KEY, password);
         prefsHaveChanged = false;
-        Serial.println("Saved preferences");
+        log_v("Saved preferences");
     }
 }
 
 void updateTimeDisplayCB() {
     if(!getLocalTime(&timeinfo)){
-        Serial.println("Failed to obtain time");        // TODO: Show errormsg on LCD
+        log_e("Failed to obtain time");        // TODO: Show errormsg on LCD
         displayClearLine(0);
         return;
     }
@@ -396,7 +381,7 @@ int setupRotVolume() {
 
     long lastVol = preferences.getInt(PKEY_LAST_VOL, VOL_START);
 
-    Serial.printf("lastVol = %lu (from prefs), min = %d, max = %d ", lastVol, 0, VOL_MAX_STEPS);
+    log_d("lastVol = %lu (from prefs), min = %d, max = %d ", lastVol, 0, VOL_MAX_STEPS);
 
     // input sanitation
     lastVol = MIN(lastVol, VOL_MAX_STEPS-1);
@@ -404,7 +389,7 @@ int setupRotVolume() {
 
     rotVolume.setEncoderValue(lastVol);
 
-    Serial.print("After Sanitation: lastVol = "); Serial.println(lastVol);
+    log_d("After Sanitation: lastVol = %d", lastVol);
     return lastVol;
 }
 
@@ -416,20 +401,20 @@ int setupRotStation() {
     //rotStation.setAcceleration(0); //or set the value - larger number = more accelearation; 0 or 1 means disabled acceleration
     rotStation.disableAcceleration();
     
-    Serial.print("Favoritelist contains elements: "); Serial.println(getStationInfoSize());
+    log_v("%s contains %d elements.", stationsFilename, getStationInfoSize());
 
     currentFavorite = preferences.getInt(PKEY_LAST_FAV_IDX, currentFavorite);
 
     // input sanitation
     if ((currentFavorite > getStationInfoSize()-1) || (currentFavorite < 0)) {
-        Serial.println("Favindex from prefs is out of range for current favorite list");
+        log_w("Favindex from prefs is out of range for current favorite list");
     }
     currentFavorite = MIN(currentFavorite, getStationInfoSize() - 1);
     currentFavorite = MAX(0, currentFavorite);
 
     rotStation.setEncoderValue(currentFavorite);
 
-    Serial.printf("currentFavorite = %d %s\n", currentFavorite, getStationInfo(currentFavorite).name);
+    log_d("currentFavorite = %d %s", currentFavorite, getStationInfo(currentFavorite).name);
     return currentFavorite;
 }
 
@@ -439,14 +424,13 @@ void setup() {
     
     Serial.begin(115200);
     delay(2500);
-    Serial.println("\n<<<<<<<<<<<< setup started >>>>>>>>>>>\n");
+    log_v("<<<<<<<<<<<< setup started >>>>>>>>>>>");
 
     int lastRunMode = preferences.getInt(PKEY_LAST_RUN_MODE, RUN_MODE_RADIO);
-    Serial.printf("lastRunMode %d\n", lastRunMode);
+    log_v("lastRunMode %d", lastRunMode);
 
     setup_display();
 
-    Log.begin(LOG_LEVEL_TRACE, &Serial, true);
     printEspChipInfo();
 
     timerDateTimeDisplayUpdate = timer.setInterval(DISPLAY_TIME_UPDATE_MS, updateTimeDisplayCB);
@@ -456,13 +440,15 @@ void setup() {
     timerScrollMsgTick = timer.setInterval(SCROLL_MSG_SPEED_MS, scrollMsgTickCB);
     timer.disable(timerScrollMsgTick);
     timerSavePreferences = timer.setInterval(AUTOSAVE_PREFS_MS, savePreferencesCB);
-    Serial.println("Timers successfully configured");
+    log_v("Timers successfully configured");
 
-    Serial.printf("Mounting %s Filessystem: %s\n", "SPIFFS", mountFS()?"Succes":"Error");   
+    fsMounted = mountFS();
+
+    log_v("Mounting %s Filessystem: %s", "SPIFFS", (fsMounted)?"Succes":"Error");   
 
     if (lastRunMode == RUN_MODE_RESTART_SETUP) {
         
-        Serial.println("Starting Wifi setup");
+        log_v("Starting Wifi setup");
         displayClear();
         displayMessage(0, "Starting Wifi setup");
 
@@ -474,7 +460,7 @@ void setup() {
         setup_www();
         start_www();
 
-        Serial.printf("AccessPoint: IP '%s', KEY '%s' ", accessPtIp.toString().c_str(), AP_PWD);
+        log_d("AccessPoint: IP '%s', KEY '%s' ", accessPtIp.toString().c_str(), AP_PWD);
         displayMessage(0, "____ Wifi setup ____");
         char msgBuf[21];
         snprintf(msgBuf, 21, "SSID: %s", AP_SSID);
@@ -492,7 +478,7 @@ void setup() {
     } else {
  
         if (loadStations(stationsFilename) > 0) {
-            Serial.printf("Loaded %d stations\n", getStationInfoSize());
+            log_d("Loaded %d stations", getStationInfoSize());
         } else {
             displayClear();
             stationInfo_t defStation = setStationInfoToDefault();
@@ -500,7 +486,7 @@ void setup() {
             displayMessage(1,"Couldn't load preset");
             displayMessage(2,"Upload station.json");
             displayMessage(3,"in config mode.");
-            Serial.printf("No preset stations loaded. Using one default station %s (%s)\n", defStation.name, defStation.url);
+            log_d("No preset stations loaded. Using one default station %s (%s)", defStation.name, defStation.url);
             delay(10000);
             displayClear();
         }
@@ -508,7 +494,7 @@ void setup() {
         if (writePreferencesOnSetup) {
             preferences.putString(PKEY_SSID, ssid);
             preferences.putString(PKEY_WIFI_KEY, password);
-            Serial.println("Wrote defaults to prefs");
+            log_d("Wrote defaults to prefs");
             delay(500);
         }
 
@@ -516,13 +502,13 @@ void setup() {
         password = preferences.getString(PKEY_WIFI_KEY, password);
 
         if (ssid.isEmpty() ||ssid.isEmpty()) {
-            Serial.print("Can't connect to wifi, no credentials found.");        
+            log_d("Can't connect to wifi, no credentials found.");        
             displayMessage(0, "Cant connect to wifi");
             displayMessage(1, "no credentials found");
             delay(500);
             restartInRunMode(RUN_MODE_RESTART_SETUP);
         } else {
-            Serial.print("Connecting to wifi ");
+            log_d("Connecting to wifi ");
             WiFi.disconnect();
             WiFi.mode(WIFI_STA);
             
@@ -535,25 +521,24 @@ void setup() {
             uint8_t t = 0;
             while ((WiFi.status() != WL_CONNECTED) && (t < MAX_WIFI_CONNECT_TRIES)) {
                 t++;
-                Serial.print('.');
+                log_d("Connecting to wifi attempt #%d", t);
                 displayBar(2, t);
                 delay(1500);
             }
         }
         if (WiFi.status() != WL_CONNECTED) {
-            Serial.println("Could not connect to Wifi. Check Config. Restarting in 10s");
+            log_d("Could not connect to Wifi. Check Config. Restarting in 10s");
             displayMessage(0, "Couldn't connect to");
             displayMessage(2, "Check Wifi Config");
             restartInRunMode(RUN_MODE_RESTART_SETUP);
         }
 
-        Serial.println(" success");
-        Serial.printf("IP %s, Signal (RRSI): %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+        log_i("Wifi connected. IP %s, Signal-Strength (RRSI): %d", WiFi.localIP().toString().c_str(), WiFi.RSSI());
             
         displayMessage(0, "Wifi connected");
 
         configTzTime(tzBerlin, ntpServer, ntpServer, ntpServer);
-        Serial.printf("Time Configured: %s, %s\n", tzBerlin, ntpServer);
+        log_d("Time Configured: %s, %s", tzBerlin, ntpServer);
         printLocalTime();
 
         delay(2000);
@@ -582,9 +567,9 @@ void setup() {
             runMode = lastRunMode;
         } 
 
-        Serial.printf("Start in runMode = %d\n", runMode);
+        log_d("Start in runMode = %d", runMode);
     }
-    Serial.println("\n<<<<<<<<<<<< setup finished >>>>>>>>>>>\n");
+    log_v("<<<<<<<<<<<< setup finished >>>>>>>>>>>");
 }
 
 void loop(){
@@ -602,21 +587,20 @@ void loop(){
 // optional callbacks from audio lib
 // TODO: show important error info in display
 void audio_info(const char *info){
-    Serial.print("info        "); Serial.println(info);
+    log_i("info        %s", info);
 }
 void audio_id3data(const char *info){  //id3 metadata
-    Serial.print("id3data     ");Serial.println(info);
+    log_i("id3data     %s", info);
 }
 void audio_eof_mp3(const char *info){  //end of file
-    Serial.print("eof_mp3     ");Serial.println(info);
+    log_i("eof_mp3     %s", info);
 }
 void audio_showstation(const char *info){
-    Serial.print("station     ");Serial.println(info);
-   // displayMessage(2, info);
+    log_i("station     %s", info);
 }
 void audio_showstreamtitle(const char *info){
     strlcpy(scrollingStreamTitleBuffer, info, MAXLEN_SCROLL_STREAMTITLE_BUFFER / 2);
-    Serial.printf("currentStreamTitle '%s'  %d\n", scrollingStreamTitleBuffer, strlen(scrollingStreamTitleBuffer));
+    log_i("currentStreamTitle '%s'  %d\n", scrollingStreamTitleBuffer, strlen(scrollingStreamTitleBuffer));
 
     if (strlen(info) > DISPLAY_COLS) {
         displayScrollingMsgStart(3, timerScrollMsgTick);
@@ -628,24 +612,24 @@ void audio_showstreamtitle(const char *info){
     }
 }
 void audio_bitrate(const char *info){
-    Serial.print("bitrate     ");Serial.println(info);
+    log_i("bitrate     %s", info);
 }
 void audio_commercial(const char *info){  //duration in sec
-    Serial.print("commercial  ");Serial.println(info);
+    log_i("commercial  %s", info);
 }
 void audio_icyurl(const char *info){  //homepage
-    Serial.print("icyurl      ");Serial.println(info);
+    log_i("icyurl      %s", info);
 }
 void audio_lasthost(const char *info){  //stream URL played
-    Serial.print("lasthost    ");Serial.println(info);
+    log_i("lasthost    %s", info);
 }
 void audio_eof_speech(const char *info){
-    Serial.print("eof_speech  ");Serial.println(info);
+    log_i("eof_speech  %s", info);
 }
 
 void restartInRunMode(uint8_t newRunMode) {
     preferences.putInt(PKEY_LAST_RUN_MODE, newRunMode);
-    Serial.printf(">>> Restarting to newRunMode %d\n", newRunMode);
+    log_i(">>> Restarting to newRunMode %d", newRunMode);
     displayClear();
     displayMessage(1, "    restarting...");
     delay(500);
@@ -655,5 +639,5 @@ void restartInRunMode(uint8_t newRunMode) {
 void setWifiConfig(const String newSsid, const String newPkey) {
     preferences.putString(PKEY_SSID, newSsid);
     preferences.putString(PKEY_WIFI_KEY, newPkey);
-    Serial.println("Saved new Wifi config");
+    log_d("Saved new Wifi config");
 }

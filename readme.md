@@ -216,4 +216,5 @@ Ralph shows how he built and improved his webradio in several VLOG videos:
 ## Lost + Found
 
 * Changing partition table? Use [Hex Calculator](https://www.calculator.net/hex-calculator.htm) 
-* https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/
+* [The evils of arduino strings](https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/)
+* [ESP32 Logging](https://thingpulse.com/esp32-logging/)
