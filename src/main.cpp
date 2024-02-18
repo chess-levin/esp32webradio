@@ -157,6 +157,13 @@ void onVolBtnLongClick() {
         prefsHaveChanged = true;
         timer.enable(timerDateTimeDisplayUpdate);
         log_v("Switching off. runMode %d", runMode);
+    } else if (runMode == RUN_MODE_OTA) {
+        log_v("Return from OTA ( runMode %d) to standby", runMode);
+        timer.disable(timerScrollMsgTick);
+        timer.disable(timerMenuDispTimeout);
+        timer.disable(timerDateTimeDisplayUpdate);
+        displayClear();
+        restartInRunMode(RUN_MODE_STANDBY);
     }
 }
 
@@ -447,7 +454,8 @@ void setup() {
     log_v("Mounting %s Filessystem: %s", "SPIFFS", (fsMounted)?"Succes":"Error");   
 
     if (lastRunMode == RUN_MODE_RESTART_SETUP) {
-        
+        runMode = RUN_MODE_OTA;
+
         log_v("Starting Wifi setup");
         displayClear();
         displayMessage(0, "Starting Wifi setup");
