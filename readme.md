@@ -101,8 +101,11 @@ SCL | 22
 ### Inter-IC Sound (I2S)
 
 * [Espressif Docs](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/i2s.html)
+* [ALL YOU NEED TO KNOW ABOUT I2S](https://hackaday.com/2019/04/18/all-you-need-to-know-about-i2s/)
 * ESP32 Audio Tutorial with lots of examples (Andreas Spiess): [Video](https://www.youtube.com/watch?v=a936wNgtcRA)
 * DroneBot Workshop ESP32 Sound - Working with I2S [Blog](https://dronebotworkshop.com/esp32-i2s/), [Video](https://www.youtube.com/watch?v=m-MPBjScNRk&t=2377s)
+* [Blog post explains I2S](https://forum.arduino.cc/t/i-s-audio/670650/4)
+* https://forum.arduino.cc/t/giving-two-outputs-in-one-i2s-port/988109
 
 ## Various ESP32 Boards
 
@@ -216,4 +219,5 @@ Ralph shows how he built and improved his webradio in several VLOG videos:
 ## Lost + Found
 
 * Changing partition table? Use [Hex Calculator](https://www.calculator.net/hex-calculator.htm) 
-* https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/
+* [The evils of arduino strings](https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/)
+* [ESP32 Logging](https://thingpulse.com/esp32-logging/)
