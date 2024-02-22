@@ -354,13 +354,12 @@ void updateTimeDisplayCB() {
     }
 
     displayWifiSignal(WiFi.RSSI());
-
+    
+    // https://www.geeksforgeeks.org/strftime-function-in-c/
     if (runMode == RUN_MODE_RADIO) {
         if (timeinfo.tm_min != displayLastUpdatedMinute) {
             char datetime[13];
-            //char line[22];
             strftime(datetime, 13, "%d.%m. %H:%M" , &timeinfo); // "%Y-%m-%d %H:%M", "%A, %B %d %H:%M:%S"
-            //sprintf(line, "%3d%17s", WiFi.RSSI(), datetime);
             displayDateTime(datetime);
             Serial.print("Update Time Display: "); Serial.println(&timeinfo, "'%d.%m. %H:%M'");    
             displayLastUpdatedMinute = timeinfo.tm_min;
@@ -369,11 +368,11 @@ void updateTimeDisplayCB() {
         } 
     } else if (runMode == RUN_MODE_STANDBY) {
         char time[9];
-        char date1[12]; 
+        char date1[13]; 
         char date2[21];
         strftime(time, 9, "%H:%M:%S" , &timeinfo); // "%Y-%m-%d %H:%M", "%A, %B %d %H:%M:%S"
-        strftime(date1, 10, "%A," , &timeinfo); 
-        strftime(date2, 21, "%B %d" , &timeinfo);
+        strftime(date1, 13, "%A," , &timeinfo);         // name of weekday Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
+        strftime(date2, 21, "%B %d" , &timeinfo);       // full name of month
         displayDateTime(time, date1, date2);
     }
 }
