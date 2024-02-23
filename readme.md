@@ -112,6 +112,7 @@ SCL | 22
 * [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
 * ESP API Guide [Partion Tables](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html)
 * [Partion Table Calculator Sheet](https://docs.google.com/spreadsheets/d/1M6_qx00ZR82jyWa2slCMcvLtnXR9Q9dnis5mR5YChW8/edit#gid=0)
+* [More Memory for the ESP32 without Soldering (How-to adapt partition sizes)](https://www.youtube.com/watch?app=desktop&v=Qu-1RK4Fk7g)
 
 
 
