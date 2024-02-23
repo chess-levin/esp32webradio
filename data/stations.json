@@ -37,7 +37,7 @@
   },
   {
     "name": "WDR5",
-    "url": "https://wdr-wdr5-live.icecastssl.wdr.de/wdr/wdr5/live/mp3/128/stream.mp3"
+    "url": "http://wdr-wdr5-live.icecastssl.wdr.de/wdr/wdr5/live/mp3/128/stream.mp3"
   },
   {
     "name": "Einslive",
@@ -57,15 +57,15 @@
   },
   {
     "name": "DLF Nova (96kb,aac)",
-    "url": "https://st03.sslstream.dlf.de/dlf/03/mid/aac/stream.aac?aggregator=web"
+    "url": "http://st03.sslstream.dlf.de/dlf/03/mid/aac/stream.aac?aggregator=web"
   },
   {
     "name": "DLF Nova (48kb,aac)",
-    "url": "https://st03.sslstream.dlf.de/dlf/03/low/aac/stream.aac?aggregator=web"
+    "url": "http://st03.sslstream.dlf.de/dlf/03/low/aac/stream.aac?aggregator=web"
   },
     {
     "name": "DLF DokDeb",
-    "url": "https://st04.sslstream.dlf.de/dlf/04/128/mp3/stream.mp3"
+    "url": "http://st04.sslstream.dlf.de/dlf/04/128/mp3/stream.mp3"
   },
   {
     "name": "ffn",
