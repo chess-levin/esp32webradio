@@ -1,5 +1,7 @@
 # ESP32 Webradio
 
+![picture of my webradio](/docs/radio.jpg "picture of my webradio").
+
 This project is inspired by several other internet radio projects. 
 
 The first idea came from a project published by Gerald Lechner in an [article](https://www.az-delivery.de/blogs/azdelivery-blog-fur-arduino-und-raspberry-pi/internetradio-mit-esp32-und-max-98357a?comment=134821511435&page=1) at the AZ Delivery blog. I've ported the original code from an Arduino IDE compatible structure to a PlatformIO version. 
@@ -222,3 +224,15 @@ Ralph shows how he built and improved his webradio in several VLOG videos:
 * Changing partition table? Use [Hex Calculator](https://www.calculator.net/hex-calculator.htm) 
 * [The evils of arduino strings](https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/)
 * [ESP32 Logging](https://thingpulse.com/esp32-logging/)
+
+
+## TODOs
+
+### Fixes
+
+* handle wifi connection loss while in standby
+
+### Features
+
+* HTML from code to SPIFFS
+* Change button long-press behaviour: When button is pressed long enough, the action happens without releasing the pressed button. So you don't have to count to know when it's time to release the button
