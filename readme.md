@@ -1,6 +1,6 @@
 # ESP32 Webradio
 
-![picture of my webradio](/docs/radio.jpg "picture of my webradio").
+![picture of my webradio](/docs/radio.jpg "picture of my webradio")
 
 This project is inspired by several other internet radio projects. 
 
