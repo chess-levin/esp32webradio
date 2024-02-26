@@ -56,8 +56,11 @@ int displayLastUpdatedMinute = -1;
 #define VOL_START       5
 
 #define NO_CIRCLE_VALUES false
+#define CIRCLE_VALUES true
 
 #define MAX_WIFI_CONNECT_TRIES  20
+
+#define START_MENU_CURSOR   '>'
 
 #define SCROLL_MSG_SPEED_MS     900
 #define MENU_TIMEOUT_MS         15330
@@ -139,6 +142,15 @@ void onVolBtnShortClick() {
         displayMessage(2, getStationInfo(currentFavorite).name);
         timer.enable(timerDateTimeDisplayUpdate);
     }
+
+    if (runMode == RUN_MODE_START_MENU) {
+        long i = rotVolume.readEncoder();
+        log_d("Selected value %d", i);
+        if (i == 0)
+            restartInRunMode(RUN_MODE_STANDBY);
+        else
+            restartInRunMode(RUN_MODE_OTA);
+    }
 }
 
 void onVolBtnLongClick() {
@@ -163,7 +175,7 @@ void onVolBtnLongClick() {
         timer.disable(timerMenuDispTimeout);
         timer.disable(timerDateTimeDisplayUpdate);
         displayClear();
-        restartInRunMode(RUN_MODE_STANDBY);
+        restartInRunMode(RUN_MODE_START_MENU);
     }
 }
 
@@ -198,7 +210,7 @@ void onStatBtnShortClick() {
 void onStatBtnLongClick() {
     log_d("Station button LONG press %ul milliseconds after restart", millis());
 
-    restartInRunMode(RUN_MODE_RESTART_SETUP);
+    restartInRunMode(RUN_MODE_START_MENU);
 }
 
 
@@ -211,7 +223,6 @@ void handleRotaryVolBtn() {
 
     if (isEncoderButtonDown) {
     if (!wasButtonDown) {
-        //start measuring
         lastTimeButtonDown = millis();
     }
     //else we wait since button is still down
@@ -240,7 +251,6 @@ void handleRotaryStatBtn() {
 
     if (isEncoderButtonDown) {
     if (!wasButtonDown) {
-        //start measuring
         lastTimeButtonDown = millis();
     }
     //else we wait since button is still down
@@ -273,6 +283,13 @@ void rotaryLoop()
             displayVolume(newVol);
             prefsHaveChanged = true;
         }
+
+        if (runMode == RUN_MODE_START_MENU) {
+            uint8_t newMenuPos = rotVolume.readEncoder();
+            // TODO: this is only a quick&dirty solution for 2 menu items
+            displayMoveChar(2 + abs(newMenuPos-1), 0, 2 + newMenuPos, 0, START_MENU_CURSOR); 
+        }
+        
     }
 
     if (rotStation.encoderChanged())
@@ -377,6 +394,14 @@ void updateTimeDisplayCB() {
     }
 }
 
+void setupRotLeftMenu() {
+    rotVolume.begin();
+    rotVolume.setup(readVolEncoderISR);
+    rotVolume.setBoundaries(0, 1, CIRCLE_VALUES); //minValue, maxValue, circleValues true|false (when max go to min and vice versa)
+    rotVolume.setEncoderValue(0);
+    rotVolume.disableAcceleration(); //acceleration is now enabled by default - disable if you dont need it
+}
+
 int setupRotVolume() {
     rotVolume.begin();
     rotVolume.setup(readVolEncoderISR);
@@ -424,6 +449,24 @@ int setupRotStation() {
     return currentFavorite;
 }
 
+void showStartupMenu() {
+    log_d("showStartupMenu");
+    displayClear();
+    displayMessage(0, "__Select Startmode__");
+    displayMessage(2, "> Standby");
+    displayMessage(3, "  Config/Update");
+}
+
+void setupTimers() {
+    timerDateTimeDisplayUpdate = timer.setInterval(DISPLAY_TIME_UPDATE_MS, updateTimeDisplayCB);
+    timer.disable(timerDateTimeDisplayUpdate);
+    timerMenuDispTimeout = timer.setInterval(MENU_TIMEOUT_MS, menuDispTimeoutCB);
+    timer.disable(timerMenuDispTimeout);
+    timerScrollMsgTick = timer.setInterval(SCROLL_MSG_SPEED_MS, scrollMsgTickCB);
+    timer.disable(timerScrollMsgTick);
+    timerSavePreferences = timer.setInterval(AUTOSAVE_PREFS_MS, savePreferencesCB);
+    log_v("Timers successfully configured");
+}
 
 void setup() {
     preferences.begin("webradio", false); 
@@ -435,37 +478,36 @@ void setup() {
     int lastRunMode = preferences.getInt(PKEY_LAST_RUN_MODE, RUN_MODE_RADIO);
     log_v("lastRunMode %d", lastRunMode);
 
-    setup_display();
+    setupDisplay();
 
     printEspChipInfo();
 
-    timerDateTimeDisplayUpdate = timer.setInterval(DISPLAY_TIME_UPDATE_MS, updateTimeDisplayCB);
-    timer.disable(timerDateTimeDisplayUpdate);
-    timerMenuDispTimeout = timer.setInterval(MENU_TIMEOUT_MS, menuDispTimeoutCB);
-    timer.disable(timerMenuDispTimeout);
-    timerScrollMsgTick = timer.setInterval(SCROLL_MSG_SPEED_MS, scrollMsgTickCB);
-    timer.disable(timerScrollMsgTick);
-    timerSavePreferences = timer.setInterval(AUTOSAVE_PREFS_MS, savePreferencesCB);
-    log_v("Timers successfully configured");
+    setupTimers();
 
     fsMounted = mountFS();
 
     log_v("Mounting %s Filessystem: %s", "SPIFFS", (fsMounted)?"Succes":"Error");   
 
-    if (lastRunMode == RUN_MODE_RESTART_SETUP) {
-        runMode = RUN_MODE_OTA;
+    if (lastRunMode == RUN_MODE_START_MENU) {
+        runMode = lastRunMode;
+        showStartupMenu();
+        setupRotLeftMenu();
+    }
 
-        log_v("Starting Wifi setup");
+    if (lastRunMode == RUN_MODE_OTA) {
+        runMode = lastRunMode;
+
+        log_v("Starting OTA setup");
         displayClear();
-        displayMessage(0, "Starting Wifi setup");
+        displayMessage(0, "Starting OTA setup");
 
         WiFi.disconnect();
         WiFi.mode(WIFI_AP);
         WiFi.softAP(AP_SSID, AP_PWD);
         IPAddress accessPtIp = WiFi.softAPIP();
    
-        setup_www();
-        start_www();
+        setupWww();
+        startWww();
 
         log_d("AccessPoint: IP '%s', KEY '%s' ", accessPtIp.toString().c_str(), AP_PWD);
         displayMessage(0, "____ Wifi setup ____");
@@ -482,8 +524,10 @@ void setup() {
             displayMessage(3, scrollingStreamTitleBuffer);
         }
       
-    } else {
- 
+    } 
+    
+    if ((lastRunMode == RUN_MODE_RADIO) || (lastRunMode == RUN_MODE_STANDBY)) 
+    {
         if (loadStations(stationsFilename) > 0) {
             log_d("Loaded %d stations", getStationInfoSize());
         } else {
@@ -512,8 +556,8 @@ void setup() {
             log_d("Can't connect to wifi, no credentials found.");        
             displayMessage(0, "Cant connect to wifi");
             displayMessage(1, "no credentials found");
-            delay(500);
-            restartInRunMode(RUN_MODE_RESTART_SETUP);
+            delay(7000);
+            restartInRunMode(RUN_MODE_START_MENU);
         } else {
             log_d("Connecting to wifi ");
             WiFi.disconnect();
@@ -537,7 +581,7 @@ void setup() {
             log_d("Could not connect to Wifi. Check Config. Restarting in 10s");
             displayMessage(0, "Couldn't connect to");
             displayMessage(2, "Check Wifi Config");
-            restartInRunMode(RUN_MODE_RESTART_SETUP);
+            restartInRunMode(RUN_MODE_START_MENU);
         }
 
         log_i("Wifi connected. IP %s, Signal-Strength (RRSI): %d", WiFi.localIP().toString().c_str(), WiFi.RSSI());
@@ -568,11 +612,13 @@ void setup() {
             displayVolume(audio.getVolume());
             audio.connecttohost(getStationInfo(currentFavorite).url);
             displayMessage(2, getStationInfo(currentFavorite).name);
-            runMode = lastRunMode;
+
         } else if (lastRunMode == RUN_MODE_STANDBY) {
             displayClear();
-            runMode = lastRunMode;
+            
         } 
+
+        runMode = lastRunMode;
 
         log_d("Start in runMode = %d", runMode);
     }
@@ -585,10 +631,11 @@ void loop(){
     if (runMode == RUN_MODE_RADIO) {
         audio.loop();
     }
+    if (runMode == RUN_MODE_START_MENU) {
+    }
 
     rotaryLoop();
     timer.run();
-
 }
 
 // optional callbacks from audio lib

@@ -28,7 +28,7 @@ void printProgressCB(size_t prg, size_t sz) {
     log_i("Progress: %d%%", p);
 }
 
-void setup_www() {
+void setupWww() {
 
     Update.onProgress(printProgressCB);
 
@@ -149,7 +149,7 @@ void setup_www() {
 
 }
 
-void start_www() {
+void startWww() {
     server.begin();
 }
 
