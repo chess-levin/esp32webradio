@@ -11,7 +11,9 @@ But this version suffers from a permanently interrupted tcp stream. So I looked 
 
 As I wanted to connect bluetooth speakers to my webradio I searched for similar projects that had done this before. I found ... nothing, but [pschatzmann](https://github.com/pschatzmann) and his great projects/libs [ESP32-A2DP](https://github.com/pschatzmann/ESP32-A2DP) and [arduino-audio-tools](https://github.com/pschatzmann/arduino-audio-tools). Finally I found his post "The ESP32 only supports either Bluetooth or WIFI, but not both at the same time. So if you use A2DP, you will not be able to use any functionality which depends on WIFI (e.g. FreeRTOS queues)" in his [project wiki](https://github.com/pschatzmann/ESP32-A2DP/wiki/WIFI-and-A2DP-Coexistence) - dead end.
 
-I stumbled across the [KCX_BT_EMITTER](https://www.youtube.com/watch?v=ZQ5MWcis8rA) in Ralph S Bacon's VLOG. I'm going to add it to my project. Until then I'll use this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) at the analouge output to connect my BT speakers.
+I stumbled across the [KCX_BT_EMITTER](https://www.youtube.com/watch?v=ZQ5MWcis8rA) in Ralph S Bacon's VLOG. I got it working, but this device couldn't pair with my Marshall Emberton II BT Speaker. It's a nice little device and it's fun to play with serial interface and these old AT+commands.
+
+I found a [I2S to bluetooth solution](https://www.tinysineaudio.com/products/tsa5001-bluetooth-5-3-audio-transmitter-board-i2s-digital-input), but have to wait until it arrives. Until then I take this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) to connect my BT speakers.
 
 To remember my research results I wrote down many of the information. So below is a collection on the topics
 
@@ -47,6 +49,14 @@ Pin      | Function | Application     | Arduino | Comment
 | GPIO25 | LRC      | PCM 5102 (I2S)  |         | Amplifier
 | GPIO26 | BCLK     | PCM 5102 (I2S)  |         |
 | GPIO27 | DIN      | PCM 5102 (I2S)  |         |
+
+## Implementation
+
+### State Transition Model
+
+My implementation works with different states. Events like pressing a button or a successful firmware upload triggers the transition to another state.
+
+![state transition](/docs/state_transition_diagram.svg "state transition diagram")
 
 
 
