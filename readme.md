@@ -64,15 +64,13 @@ My implementation works with different states. Events like pressing a button or 
 ### Fixes
 
 * show upload state on display
-* show errors on display
 * fix display error when title contains "special chars"
 * handle wifi connection loss while in standby
 
 ### Features
 
-* HTML from code to SPIFFS
+* use F-macro
 * use mini CSS lib for html
-* show number of stations on startup
 * Change button long-press behaviour: When button is pressed long enough, the action happens without releasing the pressed button. So you don't have to count to know when it's time to release the button
 * personalized favlist
 
@@ -95,7 +93,10 @@ My implementation works with different states. Events like pressing a button or 
 
 
 ### Preferences
-* [Tutorial](https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/) 
+* [Tutorial](https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/)
+
+### Webserver
+* [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer)
 
 ## Protocols
 

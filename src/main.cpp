@@ -55,6 +55,9 @@ int displayLastUpdatedMinute = -1;
 #define VOL_MAX_STEPS   15
 #define VOL_START       5
 
+#define CONN_TIMEOUT_MS      500
+#define CONN_TIMEOUT_SSL_MS  2700
+
 #define NO_CIRCLE_VALUES false
 #define CIRCLE_VALUES true
 
@@ -449,6 +452,13 @@ int setupRotStation() {
     return currentFavorite;
 }
 
+void setupAudio() {
+        audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT, -1);
+        audio.setVolumeSteps(VOL_MAX_STEPS+1);
+        audio.setVolume(setupRotVolume());
+        audio.setConnectionTimeout(CONN_TIMEOUT_MS, CONN_TIMEOUT_SSL_MS);
+}
+
 void showStartupMenu() {
     log_d("showStartupMenu");
     displayClear();
@@ -479,6 +489,7 @@ void setup() {
     log_v("lastRunMode %d", lastRunMode);
 
     setupDisplay();
+    displayClear();
 
     printEspChipInfo();
 
@@ -486,7 +497,16 @@ void setup() {
 
     fsMounted = mountFS();
 
-    log_v("Mounting %s Filessystem: %s", "SPIFFS", (fsMounted)?"Succes":"Error");   
+    log_v("Mounting %s Filessystem: %s", "SPIFFS", (fsMounted)?"Succes":"Error");
+
+    if (!fsMounted) {
+        displayMessage(0, "________ERROR_______");
+        displayMessage(1, "Filesys. not mounted");
+        displayMessage(3, "Try again or update");
+        displayMessage(4, "Firmware. Restarting");
+        delay(1000);
+        restartInRunMode(RUN_MODE_START_MENU);
+    }
 
     if (lastRunMode == RUN_MODE_START_MENU) {
         runMode = lastRunMode;
@@ -523,39 +543,47 @@ void setup() {
         } else {
             displayMessage(3, scrollingStreamTitleBuffer);
         }
-      
     } 
     
     if ((lastRunMode == RUN_MODE_RADIO) || (lastRunMode == RUN_MODE_STANDBY)) 
     {
-        if (loadStations(stationsFilename) > 0) {
-            log_d("Loaded %d stations", getStationInfoSize());
+        displayClear();
+        displayMessage(0, "____Loading Prefs___");
+
+        int staCount = loadStations(stationsFilename);
+        if (staCount > 0) {
+            char msgBuf[21];
+            snprintf(msgBuf, 21, "loaded %2d stations", staCount%100);
+            log_d("%s",msgBuf);
+            displayMessage(2, msgBuf);
+            delay(4000);
         } else {
-            displayClear();
             stationInfo_t defStation = setStationInfoToDefault();
-            displayMessage(0,"______Warning_______");
-            displayMessage(1,"Couldn't load preset");
-            displayMessage(2,"Upload station.json");
-            displayMessage(3,"in config mode.");
+            displayMessage(1,"No stations found!");
+            displayMessage(2,"Goto config mode &");
+            displayMessage(3,"upload station.json");
+
             log_d("No preset stations loaded. Using one default station %s (%s)", defStation.name, defStation.url);
             delay(10000);
-            displayClear();
         }
 
         if (writePreferencesOnSetup) {
             preferences.putString(PKEY_SSID, ssid);
             preferences.putString(PKEY_WIFI_KEY, password);
             log_d("Wrote defaults to prefs");
-            delay(500);
+            delay(1000);
         }
 
         ssid = preferences.getString(PKEY_SSID, ssid);
         password = preferences.getString(PKEY_WIFI_KEY, password);
+        displayClear();
+        displayMessage(0, "___Connecting Wifi__");
 
         if (ssid.isEmpty() ||ssid.isEmpty()) {
             log_d("Can't connect to wifi, no credentials found.");        
-            displayMessage(0, "Cant connect to wifi");
-            displayMessage(1, "no credentials found");
+            displayMessage(1, "Cant connect to wifi");
+            displayMessage(2, "Missing wifi-config ");
+            displayMessage(3, "Goto config mode");
             delay(7000);
             restartInRunMode(RUN_MODE_START_MENU);
         } else {
@@ -564,8 +592,6 @@ void setup() {
             WiFi.mode(WIFI_STA);
             
             WiFi.setHostname(hostname.c_str()); //TODO: no effect?
-            
-            displayMessage(0, "Connecting to wifi");
             displayMessage(1, ssid.c_str());
 
             WiFi.begin(ssid.c_str(), password.c_str());
@@ -579,31 +605,25 @@ void setup() {
         }
         if (WiFi.status() != WL_CONNECTED) {
             log_d("Could not connect to Wifi. Check Config. Restarting in 10s");
-            displayMessage(0, "Couldn't connect to");
-            displayMessage(2, "Check Wifi Config");
+            displayMessage(2, "Couldn't connect!   ");
+            displayMessage(3, "Check Wifi Config   ");
             restartInRunMode(RUN_MODE_START_MENU);
         }
 
         log_i("Wifi connected. IP %s, Signal-Strength (RRSI): %d", WiFi.localIP().toString().c_str(), WiFi.RSSI());
             
-        displayMessage(0, "Wifi connected");
+        displayMessage(2, "Successful");
 
         configTzTime(tzBerlin, ntpServer, ntpServer, ntpServer);
         log_d("Time Configured: %s, %s", tzBerlin, ntpServer);
         printLocalTime();
 
-        delay(2000);
-        displayClearLine(0);
-        displayClearLine(1);
-        delay(500);
+        displayClear();
+        delay(2500);
         
         timer.enable(timerDateTimeDisplayUpdate);
 
-        audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT, -1);
-        audio.setVolumeSteps(VOL_MAX_STEPS+1);
-        audio.setVolume(setupRotVolume());
-        audio.setConnectionTimeout(500, 2700);
-
+        setupAudio();
         setupRotStation();
 
         displayWifiSignal(WiFi.RSSI());
@@ -686,7 +706,7 @@ void restartInRunMode(uint8_t newRunMode) {
     log_i(">>> Restarting to newRunMode %d", newRunMode);
     displayClear();
     displayMessage(1, "    restarting...");
-    delay(500);
+    delay(1500);
     ESP.restart();
 }
 
