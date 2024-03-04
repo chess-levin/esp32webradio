@@ -686,7 +686,7 @@ void restartInRunMode(uint8_t newRunMode) {
     log_i(">>> Restarting to newRunMode %d", newRunMode);
     displayClear();
     displayMessage(1, "    restarting...");
-    delay(500);
+    delay(1500);
     ESP.restart();
 }
 

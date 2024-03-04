@@ -2,14 +2,11 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <Update.h>
+#include <SPIFFS.h>
 
 #include "commons.h"
 #include "display.h"
 #include "www.h"
-#include "html/index.h"
-#include "html/restart.h"
-#include "html/wifi.h"
-#include "html/ota.h"
 
 #define PARAM_SSID  "ssid"
 #define PARAM_PKEY  "pkey"
@@ -39,12 +36,12 @@ void setupWww() {
 
     server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
         log_d("GET /");
-        request->send(200, CTYPE_HTML, INDEX_HTML);
+        request->send(SPIFFS, "/index.html");
     });
 
     server.on("/ota", HTTP_GET, [](AsyncWebServerRequest* request) {
         log_d("GET /ota");
-        request->send(200, CTYPE_HTML, OTA_HTML);
+        request->send(SPIFFS, "/ota.html");
     });
 
 
@@ -56,7 +53,7 @@ void setupWww() {
             log_d("POST /ota 1");
             AsyncWebServerResponse *response = request->beginResponse(200, CTYPE_PLAIN, (Update.hasError()) ? "FAIL" : "OK");
             response->addHeader("Connection", "close");
-            request->send(200, CTYPE_HTML, RESTART_HTML);
+            request->send(SPIFFS, "/restart.html");
         },
         [](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data,size_t len, bool final) {
             log_d("POST /ota 2");
@@ -98,7 +95,7 @@ void setupWww() {
 
     server.on("/wifi", HTTP_GET, [](AsyncWebServerRequest* request) {
         log_d("GET /wifi");
-        request->send(200, CTYPE_HTML, WIFI_HTML);
+        request->send(SPIFFS, "/wifi.html");
     });
 
     server.on("/wifi", HTTP_POST, [](AsyncWebServerRequest* request) {
@@ -139,7 +136,7 @@ void setupWww() {
         } else {
             log_d("Received ssid='%s', pkey='%s'\n", ssid.c_str(), pkey.c_str());
             setWifiConfig(ssid, pkey);
-            request->send(200, CTYPE_HTML, RESTART_HTML);
+            request->send(SPIFFS, "/restart.html");
         }
     });
 
