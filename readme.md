@@ -11,7 +11,9 @@ But this version suffers from a permanently interrupted tcp stream. So I looked 
 
 As I wanted to connect bluetooth speakers to my webradio I searched for similar projects that had done this before. I found ... nothing, but [pschatzmann](https://github.com/pschatzmann) and his great projects/libs [ESP32-A2DP](https://github.com/pschatzmann/ESP32-A2DP) and [arduino-audio-tools](https://github.com/pschatzmann/arduino-audio-tools). Finally I found his post "The ESP32 only supports either Bluetooth or WIFI, but not both at the same time. So if you use A2DP, you will not be able to use any functionality which depends on WIFI (e.g. FreeRTOS queues)" in his [project wiki](https://github.com/pschatzmann/ESP32-A2DP/wiki/WIFI-and-A2DP-Coexistence) - dead end.
 
-I stumbled across the [KCX_BT_EMITTER](https://www.youtube.com/watch?v=ZQ5MWcis8rA) in Ralph S Bacon's VLOG. I'm going to add it to my project. Until then I'll use this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) at the analouge output to connect my BT speakers.
+I stumbled across the [KCX_BT_EMITTER](https://www.youtube.com/watch?v=ZQ5MWcis8rA) in Ralph S Bacon's VLOG. I got it working, but this device couldn't pair with my Marshall Emberton II BT Speaker. It's a nice little device and it's fun to play with serial interface and these old AT+commands.
+
+I've found & ordered this [I2S to bluetooth transmitter](https://www.tinysineaudio.com/products/tsa5001-bluetooth-5-3-audio-transmitter-board-i2s-digital-input) solution, but have to wait until it arrives. Until then I take this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) to connect my BT speakers.
 
 To remember my research results I wrote down many of the information. So below is a collection on the topics
 
@@ -48,6 +50,31 @@ Pin      | Function | Application     | Arduino | Comment
 | GPIO26 | BCLK     | PCM 5102 (I2S)  |         |
 | GPIO27 | DIN      | PCM 5102 (I2S)  |         |
 
+## Implementation
+
+### State Transition Model
+
+My implementation works with different states. Events like pressing a button or a successful firmware upload triggers the transition to another state.
+
+![state transition](/docs/state_transition_diagram.svg "state transition diagram")
+
+
+## TODOs
+
+### Fixes
+
+* show upload state on display
+* show errors on display
+* fix display error when title contains "special chars"
+* handle wifi connection loss while in standby
+
+### Features
+
+* HTML from code to SPIFFS
+* use mini CSS lib for html
+* show number of stations on startup
+* Change button long-press behaviour: When button is pressed long enough, the action happens without releasing the pressed button. So you don't have to count to know when it's time to release the button
+* personalized favlist
 
 
 ## Libs
@@ -225,14 +252,3 @@ Ralph shows how he built and improved his webradio in several VLOG videos:
 * [The evils of arduino strings](https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/)
 * [ESP32 Logging](https://thingpulse.com/esp32-logging/)
 
-
-## TODOs
-
-### Fixes
-
-* handle wifi connection loss while in standby
-
-### Features
-
-* HTML from code to SPIFFS
-* Change button long-press behaviour: When button is pressed long enough, the action happens without releasing the pressed button. So you don't have to count to know when it's time to release the button

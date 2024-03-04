@@ -25,7 +25,7 @@ LiquidCrystal_I2C lcd(DISPLAY_I2C_ADDR, DISPLAY_COLS, DISPLAY_ROWS);
 int scrollPtr = -1;
 int scrollMsgLen = 0;
 
-void setup_display() {
+void setupDisplay() {
   //init the LCD display
   lcd.init();
   lcd.backlight();
@@ -137,6 +137,16 @@ void displayBar(uint8_t line, uint8_t length){
         lcd.setCursor(0, line);
         lcd.print(bar); // lcd.printf("%.*s", length, bar);
     }
+}
+
+void displayAt(uint8_t line, uint8_t col, char c) {
+  lcd.setCursor(col, line);
+  lcd.print(c);
+}
+
+void displayMoveChar(uint8_t fromLine, uint8_t fromCol, uint8_t toLine, uint8_t toCol, char c) {
+  displayAt(fromLine, fromCol, ' ');
+  displayAt(toLine, toCol, c);
 }
 
 

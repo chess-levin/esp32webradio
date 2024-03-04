@@ -1,5 +1,5 @@
 #pragma once
 
-void setup_www();
-void start_www();
+void setupWww();
+void startWww();
 void stop_www();

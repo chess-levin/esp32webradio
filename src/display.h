@@ -10,7 +10,7 @@
 
 extern LiquidCrystal_I2C lcd;
 
-void setup_display();
+void setupDisplay();
 void showStation();
 //void displayDateTime();
 void displayMessage(uint8_t line, String msg);
@@ -30,3 +30,6 @@ void displayClear();
 void displayClearLine(uint8_t line);
 void displayBarSingle(uint8_t line, uint8_t percentage);
 void displayBar(uint8_t line, uint8_t length);
+
+void displayAt(uint8_t line, uint8_t col, char c);
+void displayMoveChar(uint8_t fromLine, uint8_t fromCol, uint8_t toLine, uint8_t toCol, char c);

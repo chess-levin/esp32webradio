@@ -32,6 +32,18 @@
     "url": "http://www.ndr.de/resources/metadaten/audio/m3u/ndrinfo_hh.m3u"
   },
   {
+    "name": "BR2 (Sued)",
+    "url": "http://dispatcher.rndfnk.com/br/br2/sued/mp3/mid"
+  },
+  {
+    "name": "BR3",
+    "url": "http://dispatcher.rndfnk.com/br/br3/sued/mp3/mid"
+  },
+  {
+    "name": "Berliner Rundfunk",
+    "url": "http://stream.berliner-rundfunk.de/brf/mp3-128/internetradio"
+  },
+  {
     "name": "WDR2 (OWL)",
     "url": "http://wdr-wdr2-ostwestfalenlippe.icecastssl.wdr.de/wdr/wdr2/ostwestfalenlippe/mp3/128/stream.mp3"
   },
@@ -76,6 +88,10 @@
     "url": "http://regiocast.streamabc.net/regc-80s80smweb2517500-mp3-192-1672667"
   },
   {
+    "name": "8080s-Live",
+    "url": "http://regiocast.streamabc.net/regc-80s80slivemusic6529239-mp3-192-4931649"
+  },  
+  {
     "name": "KCWR",
     "url": "http://kcrw.streamguys1.com/kcrw_192k_mp3_on_air"
   },
@@ -118,9 +134,5 @@
   {
     "name": "TopBlues (US)",
     "url": "http://us3.internet-radio.com:8342/stream"
-  },
-  {
-    "name": "McSlons Irish Pub Radio",
-    "url": "http://server9.streamserver24.com/stream/macslonsradio/stream"
   }
 ]

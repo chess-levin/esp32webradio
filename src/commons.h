@@ -12,10 +12,10 @@
 #define MAXLEN_SCROLL_STREAMTITLE_BUFFER  128
 
 #define RUN_MODE_STANDBY    0
-#define RUN_MODE_STARTING   1
-#define RUN_MODE_RESTART_SETUP 2
 #define RUN_MODE_RADIO      3
-#define RUN_MODE_OTA        4
+#define RUN_MODE_START_MENU 4
+#define RUN_MODE_OTA        5
+
 
 // max 20 char long
 #define AP_SSID "webradio"
