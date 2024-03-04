@@ -14,6 +14,7 @@
 
 #define CTYPE_HTML  "text/html"
 #define CTYPE_PLAIN "text/plain"
+#define CTYPE_JSON  "application/json"
 
 #define U_PART U_SPIFFS
 
@@ -44,6 +45,10 @@ void setupWww() {
         request->send(SPIFFS, "/ota.html");
     });
 
+    server.on("/stations", HTTP_GET, [](AsyncWebServerRequest* request) {
+        log_d("GET /stations");
+        request->send(SPIFFS, "/stations.json", CTYPE_JSON);
+    });
 
     // https://lastminuteengineers.com/esp32-ota-web-updater-arduino-ide/
     // https://github.com/me-no-dev/ESPAsyncWebServer
