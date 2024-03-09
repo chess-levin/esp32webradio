@@ -1,6 +1,8 @@
 # ESP32 Webradio
+## Introduction
 
 ![picture of my webradio](/docs/radio.jpg "picture of my webradio")
+
 
 This project is inspired by several other internet radio projects. 
 
@@ -13,16 +15,28 @@ As I wanted to connect bluetooth speakers to my webradio I searched for similar 
 
 I stumbled across the [KCX_BT_EMITTER](https://www.youtube.com/watch?v=ZQ5MWcis8rA) in Ralph S Bacon's VLOG. I got it working, but this device couldn't pair with my Marshall Emberton II BT Speaker. It's a nice little device and it's fun to play with serial interface and these old AT+commands.
 
-I've found & ordered this [I2S to bluetooth transmitter](https://www.tinysineaudio.com/products/tsa5001-bluetooth-5-3-audio-transmitter-board-i2s-digital-input) solution, but have to wait until it arrives. Until then I take this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) to connect my BT speakers.
+Second try: I bought this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) to connect my BT speakers. The next picture shows how I integrated the ORIA in my case. It came with a rechargeable battery and I had to get rid of it (for details see [post](https://www.mikrocontroller.net/topic/565060)). The two holes at the side of the case are for the status LEDs and between the holes is the grey BT-connect press-button.
 
-To remember my research results I wrote down many of the information. So below is a collection on the topics
+![ORIA BT Adapter Integration](/docs/kcx_bt_emitter_integrated.jpg "picture of my webradio")
 
-* different ESP32 models
-* using GPIO on a ESP32
-* protocols used for communication with different devices
-* information on variuos displays
-* analouge and I2C amplifiers
-* useful libraries 
+Third try: I didn't like all these solutions I've tried so far, because the audio data is converted mulitple times (D->A->D) - that is superfluous. So I continued my search. I've found & ordered the [TSA5001 module](https://www.tinysineaudio.com/products/tsa5001-bluetooth-5-3-audio-transmitter-board-i2s-digital-input) that utilizes the I2S data as input. It works as a drop-in replacement of my PCM5102a, but I forgot, that different radio stations using different sampling rates. The TSA5001 specs
+
+* Sampling Rate: 48KHz
+* Bit per Sample: 16 bit, 24bit, 32bit.
+* aptX, aptX Low Latency, aptX HD, SBC and AAC
+* Bluetooth protocol: A2DP
+
+are saying, it supports only one fixed sampling rate. This works perfectly for radio stations with a sample rate of @48KHz. Streams with other sample rates (e.g. 44,1Khz or 24KHz) are played back with regular interruptions or at a wrong pitch.
+
+**@ALL: Is there a (easy) way to resample streams to 48KHz?**
+
+To remember my research results I wrote down many of the information, e.g.
+
+* [various ESP32 models](#various-esp32-boards)
+* [hardware communication protocols](#protocols)
+* [information on variuos displays](#various-displays)
+* [analouge and I2C amplifiers](#variuos-amplifiers)
+* [useful libraries ](#libs)
 
 
 ## Components and Connections 
@@ -33,6 +47,8 @@ Components used for this project
 * LCD blue 4x20 Zeichen, HD44780, I2C
 * PCM5102 DAC, I2S
 * Rotary Encoder KY-040
+* [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) 
+* [I2S to bluetooth transmitter](https://www.tinysineaudio.com/products/tsa5001-bluetooth-5-3-audio-transmitter-board-i2s-digital-input) (in test phase)
 
 ### Connected GPIO pins
 
@@ -46,9 +62,9 @@ Pin      | Function | Application     | Arduino | Comment
 | GPIO17 | DigIn    | Rotary 2 CLK (A)|         | select Station 
 | GPIO14 | DigIn    | Rotary 2 DT (B) |         |
 | GPIO16 | DigIn    | Rotary 2 SW     |         | add 10K Pullup Resistor
-| GPIO25 | LRC      | PCM 5102 (I2S)  |         | Amplifier
-| GPIO26 | BCLK     | PCM 5102 (I2S)  |         |
-| GPIO27 | DIN      | PCM 5102 (I2S)  |         |
+| GPIO25 | LRC      | PCM 5102 (I2S)  |         | I2S Amplifier
+| GPIO26 | BCLK     | PCM 5102 (I2S)  |         | I2S Amplifier
+| GPIO27 | DIN      | PCM 5102 (I2S)  |         | I2S Amplifier
 
 ## Implementation
 
@@ -63,7 +79,7 @@ My implementation works with different states. Events like pressing a button or 
 
 ### Fixes
 
-* show upload state on display
+* show upload state on display e.g. progress bar
 * fix display error when title contains "special chars"
 * handle wifi connection loss while in standby
 
@@ -129,6 +145,16 @@ SCL | 22
 
 
 ### Inter-IC Sound (I2S)
+ 
+Some [I2S basics](https://en.wikipedia.org/wiki/I%C2%B2S) from Wikipedia:
+
+Label   | Synonyms  | Function
+ --     | --        | --
+SCK     | BCLK      | Bit clock line: Officially "continuous serial clock (SCK)".[1] Typically written "bit clock (BCLK)"
+WS      | LRCLK, FS | Officially "word select (WS)". Typically called "left-right clock (LRCLK)" or "frame sync (FS)".
+SD      | SDIN, SDATA | Officially "serial data (SD)",  but can be called SDATA, SDIN, SDOUT, DACDAT, ADCDAT, etc.[3]
+MC        |           | Master clock: This is not part of the I2S standard,but is commonly included for synchronizing the internal operation of the analog/digital converters.
+
 
 * [Espressif Docs](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/i2s.html)
 * [ALL YOU NEED TO KNOW ABOUT I2S](https://hackaday.com/2019/04/18/all-you-need-to-know-about-i2s/)
@@ -141,6 +167,7 @@ SCL | 22
 
 * [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
 * ESP API Guide [Partion Tables](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html)
+* [Video: How do OTA Updates work, including an explanation of partion tables](https://www.youtube.com/watch?v=zXqhv_iy_lI&list=PLYwlctyeRCy3EseqeheBXB8ndZs-U8dbD&index=2&t=231s)
 * [Partion Table Calculator Sheet](https://docs.google.com/spreadsheets/d/1M6_qx00ZR82jyWa2slCMcvLtnXR9Q9dnis5mR5YChW8/edit#gid=0)
 * [More Memory for the ESP32 without Soldering (How-to adapt partition sizes)](https://www.youtube.com/watch?app=desktop&v=Qu-1RK4Fk7g)
 
@@ -196,14 +223,16 @@ Address             | I2C device found at address 0x3C
 
 ## Variuos Amplifiers
 
-#### MAX98375a
-
-* [Datasheet](https://eckstein-shop.de/AdafruitI2S3WClassDAmplifierBreakout-MAX98357A)
-
 #### PCM5102 DAC
 
 * [Datasheet](https://www.ti.com/lit/ds/symlink/pcm5102a.pdf)
 * [Demo Project](https://www.hackster.io/esikora/esp32-audio-project-part-i-internet-radio-with-i-s-dac-a5515c)
+
+
+#### MAX98375a
+
+* [Datasheet](https://eckstein-shop.de/AdafruitI2S3WClassDAmplifierBreakout-MAX98357A)
+
 
 ## Various Rotary Encoders
 
@@ -211,7 +240,7 @@ Address             | I2C device found at address 0x3C
 * Rotary encoder with [RGB LED Push Button](https://eckstein-shop.de/SparkfunRotaryEncoder-IlluminatedRGBEN)
 * Debouncing Circuit [Video by Ralph S Bacon](https://www.youtube.com/watch?v=b2uUYiGrS5Y)
 
-## Other ESP-based Internet Radio Projects
+## Other ESP32-based Internet Radio Projects
 
 ### ESP32 I2S amplifier (I2S -> MAX98357a)
 
@@ -224,6 +253,9 @@ Address             | I2C device found at address 0x3C
 * [Akkubetrieb, USB-Laderegler](https://www.az-delivery.de/blogs/azdelivery-blog-fur-arduino-und-raspberry-pi/internet-radio-mit-dem-esp32)
 * [Simple Demo](https://elektro.turanis.de/html/prj466/index.html)
 
+### M5StickC plus (ESP32 Pico), external I²S DAC (PCM5102A)
+
+* [hackster.io Blog Post](https://www.hackster.io/esikora/esp32-audio-project-part-i-internet-radio-with-i-s-dac-a5515c)
 
 ### ESP32 Internet Radio on TTGO T-Display board
 
@@ -235,6 +267,10 @@ Address             | I2C device found at address 0x3C
 ### by Andreas Spiess
 
 * [#195 DIY Internet Radio using an ESP32 ](https://www.youtube.com/watch?v=hz65vfvbXMs)
+
+### ESP32, VS1053 (MP3 Deoder), PAM8403 (digital Amp), 3,5" LCD 
+
+https://www.instructables.com/Internet-Radio-Using-an-ESP32/
 
 ### ESP32 VS1053, TFT ILI9341 Touchdisplay by Ralph S Bacon
 
@@ -252,4 +288,5 @@ Ralph shows how he built and improved his webradio in several VLOG videos:
 * Changing partition table? Use [Hex Calculator](https://www.calculator.net/hex-calculator.htm) 
 * [The evils of arduino strings](https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/)
 * [ESP32 Logging](https://thingpulse.com/esp32-logging/)
+* https://www.pschatzmann.ch/home/2021/04/30/back-to-basics-sampling-audio-with-the-esp32/#comment-1663
 

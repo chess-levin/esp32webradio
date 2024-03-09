@@ -30,6 +30,7 @@ const char *stationsFilename = "/stations.json";
 int displayLastUpdatedMinute = -1;
 
 // ESP32 GPIO to PCM5102a header
+// SCK -> GND
 // -> LCK
 #define I2S_LRC     25
 // -> DIN
