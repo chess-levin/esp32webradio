@@ -39,6 +39,19 @@ To remember my research results I wrote down many of the information, e.g.
 * [useful libraries ](#libs)
 
 
+## Features/Requirements
+
+* Reliable operation
+* Good sound quality
+* Connectivity for Bluetooth speakers
+* Analog output-jack for active speakers
+* Function as clock when radio is off
+* Simple user interface in the style of old car radios
+* Visualization of information about current song and station
+* Store stations as JSON-file in mcu filesystem
+* Webserver-based wifi setup
+* OTA update for firmware and radio station JSON
+
 ## Components and Connections 
 
 Components used for this project
