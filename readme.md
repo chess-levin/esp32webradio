@@ -4,22 +4,22 @@
 ![picture of my webradio](/docs/radio.jpg "picture of my webradio")
 
 
-This project is inspired by several other internet radio projects. 
+This project is inspired by several other internet radio projects, but all projects lacked direct output via Bluetooth speakers. The first idea came from a project published by Gerald Lechner in an [article](https://www.az-delivery.de/blogs/azdelivery-blog-fur-arduino-und-raspberry-pi/internetradio-mit-esp32-und-max-98357a?comment=134821511435&page=1) at the AZ Delivery blog. I've ported the original code from an Arduino IDE compatible structure to a PlatformIO version. 
 
-The first idea came from a project published by Gerald Lechner in an [article](https://www.az-delivery.de/blogs/azdelivery-blog-fur-arduino-und-raspberry-pi/internetradio-mit-esp32-und-max-98357a?comment=134821511435&page=1) at the AZ Delivery blog. I've ported the original code from an Arduino IDE compatible structure to a PlatformIO version. 
-
-But this version suffers from a permanently interrupted tcp stream. So I looked for a solution to this problem and found these projects [ESP32-MiniWebRadio](https://github.com/schreibfaul1/ESP32-MiniWebRadio) and 
+But this version suffers from a permanently interrupted tcp audio stream. So I looked for a solution to this problem and found these projects [ESP32-MiniWebRadio](https://github.com/schreibfaul1/ESP32-MiniWebRadio) and 
 [ESP32-audioI2S](https://github.com/schreibfaul1/ESP32-audioI2S/tree/master/examples/Better_WiFi_throughput). Especially the last one contained the solution on how to optimize the tcp settings to get better streaming performance with the arduino framework - thank you [Wolle](https://github.com/schreibfaul1) for your support.
 
-As I wanted to connect bluetooth speakers to my webradio I searched for similar projects that had done this before. I found ... nothing, but [pschatzmann](https://github.com/pschatzmann) and his great projects/libs [ESP32-A2DP](https://github.com/pschatzmann/ESP32-A2DP) and [arduino-audio-tools](https://github.com/pschatzmann/arduino-audio-tools). Finally I found his post "The ESP32 only supports either Bluetooth or WIFI, but not both at the same time. So if you use A2DP, you will not be able to use any functionality which depends on WIFI (e.g. FreeRTOS queues)" in his [project wiki](https://github.com/pschatzmann/ESP32-A2DP/wiki/WIFI-and-A2DP-Coexistence) - dead end.
+And then there was the Bluetooth challenge...
 
-I stumbled across the [KCX_BT_EMITTER](https://www.youtube.com/watch?v=ZQ5MWcis8rA) in Ralph S Bacon's VLOG. I got it working, but this device couldn't pair with my Marshall Emberton II BT Speaker. It's a nice little device and it's fun to play with serial interface and these old AT+commands.
+**First Try:** As I wanted to connect bluetooth speakers to my webradio I searched for similar projects that had done this before. I found ... nothing, but [pschatzmann](https://github.com/pschatzmann) and his great projects/libs [ESP32-A2DP](https://github.com/pschatzmann/ESP32-A2DP) and [arduino-audio-tools](https://github.com/pschatzmann/arduino-audio-tools). Finally I found his post *"The ESP32 only supports either Bluetooth or WIFI, but not both at the same time. So if you use A2DP, you will not be able to use any functionality which depends on WIFI (e.g. FreeRTOS queues)"* in his [project wiki](https://github.com/pschatzmann/ESP32-A2DP/wiki/WIFI-and-A2DP-Coexistence) - dead end.
 
-Second try: I bought this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) to connect my BT speakers. The next picture shows how I integrated the ORIA in my case. It came with a rechargeable battery and I had to get rid of it (for details see [post](https://www.mikrocontroller.net/topic/565060)). The two holes at the side of the case are for the status LEDs and between the holes is the grey BT-connect press-button.
+**Second try:** I stumbled across the [KCX_BT_EMITTER](https://www.youtube.com/watch?v=ZQ5MWcis8rA) in [Ralph S Bacon's VLOG](https://www.youtube.com/watch?v=ZQ5MWcis8rA). I got it working, but this device couldn't pair with my Marshall Emberton II BT Speaker. It's a nice little device and it's fun to play with serial interface and these old AT+commands.
 
-![ORIA BT Adapter Integration](/docs/kcx_bt_emitter_integrated.jpg "picture of my webradio")
+**Third try:** I bought this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) to connect my BT speakers. The next picture shows how I integrated the ORIA in my case. It came with a rechargeable battery and I had to get rid of it (for details see [post](https://www.mikrocontroller.net/topic/565060)). The two holes at the side of the case are for the status LEDs and between the holes is the grey BT-connect press-button.
 
-Third try: I didn't like all these solutions I've tried so far, because the audio data is converted mulitple times (D->A->D) - that is superfluous. So I continued my search. I've found & ordered the [TSA5001 module](https://www.tinysineaudio.com/products/tsa5001-bluetooth-5-3-audio-transmitter-board-i2s-digital-input) that utilizes the I2S data as input. It works as a drop-in replacement of my PCM5102a, but I forgot, that different radio stations using different sampling rates. The TSA5001 specs
+![ORIA BT Adapter Integration](/docs/kcx_bt_emitter_integrated.jpg "BT adapter integration")
+
+**Fourth try:** I didn't like all these solutions I've tried so far, because the audio data is converted mulitple times (D->A->D) - that is superfluous. So I continued my search. I've found & ordered the [TSA5001 module](https://www.tinysineaudio.com/products/tsa5001-bluetooth-5-3-audio-transmitter-board-i2s-digital-input) that utilizes the I2S data as input. It works as a drop-in replacement of my PCM5102a, but I forgot, that different radio stations using different sampling rates. The TSA5001 specs
 
 * Sampling Rate: 48KHz
 * Bit per Sample: 16 bit, 24bit, 32bit.
@@ -118,8 +118,6 @@ My implementation works with different states. Events like pressing a button or 
 
 ### SPI
 
-* [SPI Pin Test](https://randomnerdtutorials.com/esp32-spi-communication-arduino/#esp32-spi-peripherals)
-
 #### Default VSPI Pins:
 
 Function | GPIO
@@ -132,16 +130,19 @@ RST                        | 22 | lcdgfx
 CS/SS (Chip Select)        | 5   
 
 
+Use [SPI Pin Test](https://randomnerdtutorials.com/esp32-spi-communication-arduino/#esp32-spi-peripherals) to ask MCU for actual pins.
+
+
 ### I2C
 
-Default I2C pins:
+Default I2C pins on ESP32:
 
 Function | GPIO
  -- | --
 SDA | 21
 SCL | 22
 
-* Use [I2C Scanner Code](https://randomnerdtutorials.com/esp32-esp8266-i2c-lcd-arduino-ide/) to test if device is detected and to get its address
+Use [I2C Scanner Code](https://randomnerdtutorials.com/esp32-esp8266-i2c-lcd-arduino-ide/) to test if device is detected and to get its address
 
 
 ### Inter-IC Sound (I2S)
@@ -154,6 +155,15 @@ SCK     | BCLK      | Bit clock line: Officially "continuous serial clock (SCK)"
 WS      | LRCLK, FS | Officially "word select (WS)". Typically called "left-right clock (LRCLK)" or "frame sync (FS)".
 SD      | SDIN, SDATA | Officially "serial data (SD)",  but can be called SDATA, SDIN, SDOUT, DACDAT, ADCDAT, etc.[3]
 MC        |           | Master clock: This is not part of the I2S standard,but is commonly included for synchronizing the internal operation of the analog/digital converters.
+
+
+I2S pins on ESP32:
+
+Function    | GPIO
+ --         | --
+SCK         | 14
+WS          | 15
+SD          | 22
 
 
 * [Espressif Docs](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/i2s.html)
@@ -201,6 +211,11 @@ MAC: 84:cc:a8:5e:c3:ac
 * I2C device found at address 0x27
 * [Scrolling Text Example](https://randomnerdtutorials.com/esp32-esp8266-i2c-lcd-arduino-ide/)
 
+The display 
+* is extremely dependent on the viewing angle
+* is extremely slow via I2C
+* brightness is not changeable via I2C
+
 ### OLED Color 128x128, SPI, SSD1327 
 * https://www.waveshare.com/w/upload/8/80/1.5inch_OLED_Module_User_Manual_EN.pdf
 * https://eckstein-shop.de/Waveshare128x128General15inchOLEDdisplayModuleEN
@@ -223,15 +238,21 @@ Address             | I2C device found at address 0x3C
 
 ## Variuos Amplifiers
 
-#### PCM5102 DAC
+#### HiLetgo PCM5102 I2S IIS Lossless Digital Audio DAC Decoder
 
+Input via I2S
+
+* [PSchatzmann Wiki](https://github.com/pschatzmann/arduino-audio-tools/wiki/External-DAC#hiletgo-pcm5102-i2s-iis-lossless-digital-audio-dac-decoder)
 * [Datasheet](https://www.ti.com/lit/ds/symlink/pcm5102a.pdf)
 * [Demo Project](https://www.hackster.io/esikora/esp32-audio-project-part-i-internet-radio-with-i-s-dac-a5515c)
 
 
 #### MAX98375a
 
+Input via I2S
+
 * [Datasheet](https://eckstein-shop.de/AdafruitI2S3WClassDAmplifierBreakout-MAX98357A)
+* [PSchatzmann Wiki](https://github.com/pschatzmann/arduino-audio-tools/wiki/External-DAC#i2s-3w-class-d-amplifier-breakout---max98357a)
 
 
 ## Various Rotary Encoders
@@ -245,7 +266,6 @@ Address             | I2C device found at address 0x3C
 ### ESP32 I2S amplifier (I2S -> MAX98357a)
 
 * https://www.az-delivery.de/blogs/azdelivery-blog-fur-arduino-und-raspberry-pi/internetradio-mit-esp32-und-max-98357a
-
 * https://www.elektormagazine.de/labs/esp32-internet-radio-1
 
 ### ESP32 analog amplifier (ESP DAC -> PAM8403)
