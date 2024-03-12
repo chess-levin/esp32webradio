@@ -13,22 +13,22 @@ And then there was the Bluetooth challenge...
 
 **First Try:** As I wanted to connect bluetooth speakers to my webradio I searched for similar projects that had done this before. I found ... nothing, but [pschatzmann](https://github.com/pschatzmann) and his great projects/libs [ESP32-A2DP](https://github.com/pschatzmann/ESP32-A2DP) and [arduino-audio-tools](https://github.com/pschatzmann/arduino-audio-tools). Finally I found his post *"The ESP32 only supports either Bluetooth or WIFI, but not both at the same time. So if you use A2DP, you will not be able to use any functionality which depends on WIFI (e.g. FreeRTOS queues)"* in his [project wiki](https://github.com/pschatzmann/ESP32-A2DP/wiki/WIFI-and-A2DP-Coexistence) - dead end.
 
-**Second try:** I stumbled across the [KCX_BT_EMITTER](https://www.youtube.com/watch?v=ZQ5MWcis8rA) in [Ralph S Bacon's VLOG](https://www.youtube.com/watch?v=ZQ5MWcis8rA). I got it working, but this device couldn't pair with my Marshall Emberton II BT Speaker. It's a nice little device and it's fun to play with serial interface and these old AT+commands.
+**Second try:** I stumbled across the [KCX_BT_EMITTER](https://www.youtube.com/watch?v=ZQ5MWcis8rA) in [Ralph S Bacon's VLOG](https://www.youtube.com/watch?v=ZQ5MWcis8rA). I got it working, but this device couldn't pair with my Marshall Emberton II BT Speaker. It's a nice little device and it's fun to play with serial interface and these old AT+commands. Again, dead end.
 
-**Third try:** I bought this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) to connect my BT speakers. The next picture shows how I integrated the ORIA in my case. It came with a rechargeable battery and I had to get rid of it (for details see [post](https://www.mikrocontroller.net/topic/565060)). The two holes at the side of the case are for the status LEDs and between the holes is the grey BT-connect press-button.
+**Third try:** I bought this little gadget [ORIA Bluetooth Aux Adapter, 2 in 1 Bluetooth 5.0](https://www.amazon.de/dp/B0BNKJHGTL) to connect my BT speakers. The next picture shows how I integrated the ORIA in my case. It came with a rechargeable battery and I had to get rid of it (for details see [post](https://www.mikrocontroller.net/topic/565060)). The two holes at the side of the case are for the status LEDs and between the holes is the grey BT-connect push-button.
 
 ![ORIA BT Adapter Integration](/docs/kcx_bt_emitter_integrated.jpg "BT adapter integration")
 
-**Fourth try:** I didn't like all these solutions I've tried so far, because the audio data is converted mulitple times (D->A->D) - that is superfluous. So I continued my search. I've found & ordered the [TSA5001 module](https://www.tinysineaudio.com/products/tsa5001-bluetooth-5-3-audio-transmitter-board-i2s-digital-input) that utilizes the I2S data as input. It works as a drop-in replacement of my PCM5102a, but I forgot, that different radio stations using different sampling rates. The TSA5001 specs
+**Fourth try:** I didn't like all these solutions I've tried so far, because the audio data is converted mulitple times (D->A->D) - that is superfluous. So I continued my search. I've found & ordered the [TSA5001 module](https://www.tinysineaudio.com/products/tsa5001-bluetooth-5-3-audio-transmitter-board-i2s-digital-input) that utilizes I2S as input. It works as a drop-in replacement of my PCM5102a. But I forgot, that different radio stations broadcasting with different sample rates and the TSA5001 specs are saying, it supports only one fixed sample rate: 
 
 * Sampling Rate: 48KHz
 * Bit per Sample: 16 bit, 24bit, 32bit.
 * aptX, aptX Low Latency, aptX HD, SBC and AAC
 * Bluetooth protocol: A2DP
 
-are saying, it supports only one fixed sampling rate. This works perfectly for radio stations with a sample rate of @48KHz. Streams with other sample rates (e.g. 44,1Khz or 24KHz) are played back with regular interruptions or at a wrong pitch.
+This works perfectly for radio stations with a sample rate of 48KHz. Streams with other sample rates (e.g. 44,1Khz or 24KHz) are played back with regular interruptions or at a wrong pitch.
 
-**@ALL: Is there a (easy) way to resample streams to 48KHz?**
+**To find a way to convert all radio streams to 48KHz I have to learn how to use Phil Schatzmanns [Arduino Audio Tools](https://github.com/pschatzmann) in depth.**
 
 To remember my research results I wrote down many of the information, e.g.
 
@@ -42,6 +42,7 @@ To remember my research results I wrote down many of the information, e.g.
 ## Features/Requirements
 
 * Reliable operation
+* Easy to use
 * Good sound quality
 * Connectivity for Bluetooth speakers
 * Analog output-jack for active speakers
@@ -49,7 +50,7 @@ To remember my research results I wrote down many of the information, e.g.
 * Simple user interface in the style of old car radios
 * Visualization of information about current song and station
 * Store stations as JSON-file in mcu filesystem
-* Webserver-based wifi setup
+* Web-based wifi-setup
 * OTA update for firmware and radio station JSON
 
 ## Components and Connections 
@@ -108,9 +109,11 @@ My implementation works with different states. Events like pressing a button or 
 
 ### Audio
 
+* [Arduino Audio Tools](https://github.com/pschatzmann/arduino-audio-tools)
 * [ESP32-audioI2S](https://github.com/schreibfaul1/ESP32-audioI2S.git)
 * [ESP32-vs1053_ext](https://github.com/schreibfaul1/ESP32-vs1053_ext)
 * [ESP8266Audio](https://github.com/earlephilhower/ESP8266Audio)
+
 
 ### Display/Graphics
 
@@ -159,6 +162,8 @@ Use [I2C Scanner Code](https://randomnerdtutorials.com/esp32-esp8266-i2c-lcd-ard
 
 
 ### Inter-IC Sound (I2S)
+
+There are two I2S periphals on the ESP32 and "arbitrary" GPIO pins can be choosen.
  
 Some [I2S basics](https://en.wikipedia.org/wiki/I%C2%B2S) from Wikipedia:
 
@@ -170,21 +175,14 @@ SD      | SDIN, SDATA | Officially "serial data (SD)",  but can be called SDATA,
 MC        |           | Master clock: This is not part of the I2S standard,but is commonly included for synchronizing the internal operation of the analog/digital converters.
 
 
-I2S pins on ESP32:
-
-Function    | GPIO
- --         | --
-SCK         | 14
-WS          | 15
-SD          | 22
-
-
+##### Resources
 * [Espressif Docs](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/i2s.html)
 * [ALL YOU NEED TO KNOW ABOUT I2S](https://hackaday.com/2019/04/18/all-you-need-to-know-about-i2s/)
 * ESP32 Audio Tutorial with lots of examples (Andreas Spiess): [Video](https://www.youtube.com/watch?v=a936wNgtcRA)
 * DroneBot Workshop ESP32 Sound - Working with I2S [Blog](https://dronebotworkshop.com/esp32-i2s/), [Video](https://www.youtube.com/watch?v=m-MPBjScNRk&t=2377s)
 * [Blog post explains I2S](https://forum.arduino.cc/t/i-s-audio/670650/4)
 * https://forum.arduino.cc/t/giving-two-outputs-in-one-i2s-port/988109
+* [Video: Great Scott explains I2S](https://www.youtube.com/watch?v=qNLvoSQCx60&t=32s)
 
 ## Various ESP32 Boards
 
@@ -194,7 +192,7 @@ SD          | 22
 * [Partion Table Calculator Sheet](https://docs.google.com/spreadsheets/d/1M6_qx00ZR82jyWa2slCMcvLtnXR9Q9dnis5mR5YChW8/edit#gid=0)
 * [More Memory for the ESP32 without Soldering (How-to adapt partition sizes)](https://www.youtube.com/watch?app=desktop&v=Qu-1RK4Fk7g)
 
-
+* [ESP32 Pinout Reference: Which GPIO pins should you use?](https://randomnerdtutorials.com/esp32-pinout-reference-gpios/)
 
 ### ESP32 DEV KIT C V4
 
