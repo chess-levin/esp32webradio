@@ -99,10 +99,11 @@ My implementation works with different states. Events like pressing a button or 
 
 ### Features
 
-* use F-macro
+* use F-macro and safe some RAM
 * use mini CSS lib for html
 * Change button long-press behaviour: When button is pressed long enough, the action happens without releasing the pressed button. So you don't have to count to know when it's time to release the button
 * personalized favlist
+* debug menu
 
 
 ## Libs
@@ -256,6 +257,7 @@ Input via I2S
 * [PSchatzmann Wiki](https://github.com/pschatzmann/arduino-audio-tools/wiki/External-DAC#hiletgo-pcm5102-i2s-iis-lossless-digital-audio-dac-decoder)
 * [Datasheet](https://www.ti.com/lit/ds/symlink/pcm5102a.pdf)
 * [Demo Project](https://www.hackster.io/esikora/esp32-audio-project-part-i-internet-radio-with-i-s-dac-a5515c)
+* [Connecting a PCM5102a breakout board to a Raspberry Pi](https://blog.sengotta.net/connecting-a-pcm5102a-breakout-board-to-a-raspberry-pi/)
 
 
 #### MAX98375a
